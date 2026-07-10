@@ -16,7 +16,7 @@ Generate scroll-stopping UGC video, images, and captioned clips from Claude Code
 Your agent can write code, browse the web, and manage your calendar. Now it can ship **finished, social-ready video**.
 
 ```bash
-npm i -g agenthook
+npm i -g getagenthook
 agenthook login
 agenthook run make_video \
   --prompt "A friendly woman in her late 20s, soft daylight kitchen, speaking to camera: 'Okay — this changed my whole morning routine. You have to try it.'" \

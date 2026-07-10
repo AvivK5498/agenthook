@@ -4,7 +4,7 @@ CLI for the AgentHook hosted media-generation API. Built for agents:
 progress goes to stderr, output URLs go to stdout, exit codes are meaningful.
 
 ```sh
-npm i -g agenthook        # or: npx agenthook <command>
+npm i -g getagenthook        # or: npx getagenthook <command>
 
 agenthook login --key <your-api-key>
 agenthook tools
@@ -17,7 +17,7 @@ agenthook history
 ```
 
 - Credentials live at `~/.agenthook/credentials.json` (chmod 600).
-- API base: `--api-url` flag > `AgentHook_API_URL` env > stored value >
+- API base: `--api-url` flag > `AGENTHOOK_API_URL` env > stored value >
   `https://localhost:3000`; all requests hit `<base>/api/v1/…`.
 - Reference images (`--ref`, repeatable) require `--owns-references`: you attest
   you own, or have the rights to use, the likeness of every person appearing in
