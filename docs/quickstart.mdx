@@ -1,0 +1,114 @@
+---
+title: "Quickstart"
+description: "From zero to a talking-head video URL."
+---
+
+Base URL for all API calls: `https://getagenthook.com/api/v1`
+
+## 1. Sign up and create an API key
+
+1. Sign up at the [console](https://getagenthook.com) (email + password, bot-check gated). New accounts receive a one-time grant of trial credits.
+2. In the console, create an API key. **The key is shown once at creation — copy it immediately.**
+
+Export it for the examples below:
+
+```bash
+export AGENTHOOK_API_KEY="<your key>"
+```
+
+## 2. Install the CLI
+
+```bash
+npm i -g getagenthook
+agenthook login   # paste your API key when prompted
+```
+
+The CLI is a thin wrapper over the API: it fetches the tool schemas from `GET /api/v1/tools` and validates your input locally — bad enum values, over-long prompts, or reference images without the ownership attestation are rejected before any network call or credit spend.
+
+## 3. First talking-head video (CLI)
+
+Describe the person and put the spoken lines in the prompt — the video model generates the speech audio natively:
+
+```bash
+agenthook run make_video \
+  --prompt 'A woman in her late 20s with shoulder-length brown hair, sitting in a bright home office, talking directly to camera in a casual selfie framing. She says: "I tested this standing desk for 30 days — here is what nobody tells you."'
+```
+
+The CLI submits the run, polls until it finishes, and prints the MP4 URL. Useful commands:
+
+```bash
+agenthook tools              # print every tool schema
+agenthook balance            # credit balance
+agenthook history            # credit ledger
+agenthook list               # your past runs
+agenthook list --search "standing desk"   # full-text search past runs
+```
+
+## 4. First talking-head video (curl)
+
+Submit the run:
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_video/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "A woman in her late 20s with shoulder-length brown hair, sitting in a bright home office, talking directly to camera in a casual selfie framing. She says: \"I tested this standing desk for 30 days — here is what nobody tells you.\"",
+    "aspect_ratio": "9:16"
+  }'
+```
+
+Response (`202`):
+
+```json
+{
+  "run_id": "run_abc123",
+  "status": "queued",
+  "credits_charged": 100
+}
+```
+
+Poll until it completes:
+
+```bash
+curl https://getagenthook.com/api/v1/runs/run_abc123 \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+When `status` is `completed`, `output` holds the playable MP4 URL:
+
+```json
+{
+  "id": "run_abc123",
+  "tool": "make_video",
+  "model": "seedance-2",
+  "status": "completed",
+  "output": ["https://media.agenthook.com/users/u_1/runs/run_abc123/0.mp4"],
+  "credits_charged": 100,
+  "error": null
+}
+```
+
+If `status` is `failed`, the debited credits have already been refunded — see [Credits & refunds](/credits-and-refunds).
+
+## 5. Explore the rest of the API
+
+```bash
+# Tool schemas (the single source the CLI validates against)
+curl https://getagenthook.com/api/v1/tools \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+
+# Your balance
+curl https://getagenthook.com/api/v1/me \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+
+# Past runs, filterable and searchable
+curl "https://getagenthook.com/api/v1/generations?tool=make_video&q=standing+desk" \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+
+# Credit ledger
+curl https://getagenthook.com/api/v1/credits/history \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+Next: the full argument reference for [`make_video`](/tools/make-video), [`make_image`](/tools/make-image), and [`caption_video`](/tools/caption-video).

@@ -1,0 +1,66 @@
+---
+title: "Using from Claude Code & Cursor"
+description: "Hand the CLI to your coding agent — it's built for this."
+---
+
+AgentHook is designed to be driven by agents, not humans in a dashboard. **The CLI is the agent surface today**: any agent that can run shell commands (Claude Code, Cursor, Codex-style agents, n8n exec nodes) can generate media with it. An MCP server and an installable skill pack are coming later — both will be thin wrappers over the same API.
+
+## Setup
+
+Install and authenticate once on the machine your agent runs on:
+
+```bash
+npm i -g getagenthook
+agenthook login   # paste an API key from the console
+```
+
+(Keys are created in the [console](https://getagenthook.com) — see [Authentication](/authentication).)
+
+## Tell your agent about it
+
+Add a note to your project's agent instructions (`CLAUDE.md`, Cursor rules, etc.):
+
+```markdown
+## Media generation
+
+The `agenthook` CLI generates videos and images (real credits — don't run speculatively):
+
+- `agenthook tools` — print every tool and its full input schema
+- `agenthook run make_video --prompt "..."` — video; put spoken lines in the
+  prompt ('She says: "..."'); flags: --captions, --enhance-prompt; with reference
+  images, --owns-references is required (likeness consent)
+- `agenthook run make_image --prompt "..."` — images (refs = editing)
+- `agenthook run caption_video --video-url <url>` — burn in subtitles
+- `agenthook list --search "<keywords>"` — find past generations before
+  making new ones
+- `agenthook balance` — check credits first
+
+Runs print a durable media URL when done.
+```
+
+## Why this works well for agents
+
+- **Self-describing schemas.** `agenthook tools` (backed by `GET /api/v1/tools`) prints every argument, type, default, and enum — the agent never has to guess or memorize the API.
+- **Local pre-validation.** The CLI checks everything deterministically checkable — enum values, prompt length caps, references without the `owns_references` attestation — *before* any network call, and fails with a message the agent can read and self-correct from. No credits are spent on malformed requests.
+- **Submit–poll handled for you.** `run` blocks until the media is ready and prints the URL — one command, one result, no polling loop for the agent to write.
+- **Searchable memory.** `agenthook list --search "..."` full-text-searches past runs (prompt, enhanced prompt, transcript), so an agent can reuse yesterday's video instead of paying to regenerate it.
+
+## No CLI? Use HTTP directly
+
+Everything the CLI does is plain REST — agents that only speak HTTP can hit the API directly:
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_image/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Flat-lay of a lime-green running shoe on dark slate", "aspect_ratio": "1:1"}'
+```
+
+Then poll `GET /api/v1/runs/{run_id}` until `completed`. See the [Quickstart](/quickstart) for the full flow.
+
+## Coming later
+
+- **MCP server** — the same three tools over the Model Context Protocol, for MCP-native clients.
+- **Skill pack** — installable agent skills that wrap the CLI with usage guidance.
+
+Both will read their schemas from `GET /api/v1/tools`, same as the CLI — one schema source, no drift.

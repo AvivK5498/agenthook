@@ -1,0 +1,63 @@
+---
+title: "make_image"
+description: "Generate or edit images from a prompt and optional reference images."
+---
+
+```
+POST /api/v1/tools/make_image/run
+```
+
+Generates images from a text prompt. With `reference_images` attached it edits/composes from them (put a product on a model, restyle a photo, keep a face consistent); without references it generates purely from text.
+
+## Routing
+
+The default `model: "auto"` routes by whether references are attached:
+
+- **With `reference_images`** → `nano-banana-2` (reference-driven editing/composition).
+- **Without** → `gpt-image-2` (text-to-image).
+
+You can pin `model` explicitly, with one hard rule: **`nano-banana-2` requires at least one reference image** — it is an edit model and a ref-less request to it is rejected with a `400`.
+
+## Arguments
+
+| Argument | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | string | yes | — | What to generate, or the edit to apply to the references. |
+| `reference_images` | array of strings (URLs) | no | — | Up to **14** publicly fetchable image URLs. Attaching any requires `owns_references: true`. |
+| `owns_references` | boolean | with refs | — | Likeness-consent attestation, identical to [`make_video`](/tools/make-video#owns_references-consent): required `true` when references are attached, otherwise `400` with no debit; persisted on the run with a timestamp as an audit trail. |
+| `model` | string | no | `"auto"` | One of `auto`, `nano-banana-2`, `gpt-image-2`. |
+| `aspect_ratio` | string | no | `"9:16"` | One of `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `21:9`. |
+| `resolution` | string | no | `"1k"` | One of `1k`, `2k`, `4k`. Higher resolutions cost more — see [pricing](/credits-and-refunds#what-runs-cost). |
+| `count` | number | no | `1` | Number of images to generate, 1–4. Cost is per image. |
+| `enhance_prompt` | boolean | no | `false` | Rewrite a rough prompt via a prompt-writing model before generation (+3 credits); both prompts are stored and searchable. Same semantics as [`make_video`](/tools/make-video#enhance_prompt). |
+
+## Example — text-to-image
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_image/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Product shot of a matte-black water bottle on a concrete plinth, soft studio light, pale lime accent backdrop",
+    "aspect_ratio": "1:1",
+    "count": 2
+  }'
+```
+
+## Example — reference-driven edit
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_image/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Put the person from image 1 in a denim jacket, golden-hour street background",
+    "reference_images": ["https://example.com/my-face.jpg"],
+    "owns_references": true,
+    "resolution": "2k"
+  }'
+```
+
+## Response
+
+`202` with `run_id` and `credits_charged`; poll `GET /api/v1/runs/{run_id}`. On `completed`, `output` is an array of durable image URLs — one per `count`. On `failed`, credits are [refunded instantly](/credits-and-refunds#instant-refunds-on-failure).

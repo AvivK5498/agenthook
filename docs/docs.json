@@ -1,0 +1,66 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "AgentHook",
+  "colors": {
+    "primary": "#a3e635",
+    "light": "#bef264",
+    "dark": "#a3e635"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "authentication"
+        ]
+      },
+      {
+        "group": "Tools",
+        "pages": [
+          "tools/make-video",
+          "tools/make-image",
+          "tools/caption-video"
+        ]
+      },
+      {
+        "group": "Billing",
+        "pages": [
+          "credits-and-refunds"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "agents"
+        ]
+      }
+    ]
+  },
+  "api": {
+    "mdx": {
+      "server": "https://getagenthook.com/api/v1",
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  },
+  "appearance": {
+    "default": "dark"
+  },
+  "background": {
+    "color": {
+      "dark": "#0a0a0a"
+    }
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Console",
+      "href": "https://getagenthook.com"
+    }
+  }
+}

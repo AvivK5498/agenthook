@@ -1,0 +1,41 @@
+---
+title: "Authentication"
+description: "Bearer API keys on every request."
+---
+
+Every API request must carry an API key as a Bearer token:
+
+```bash
+curl https://getagenthook.com/api/v1/me \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+## Creating keys
+
+API keys are created and revoked in the [console](https://getagenthook.com) after signup. A key's secret is **shown exactly once at creation** — copy it then; only a hashed form is stored on our side, so it cannot be recovered later. Lost a key? Revoke it and create a new one.
+
+For the CLI, run `agenthook login` once and paste the key; it is stored locally and attached to every request.
+
+## Scope and safety
+
+- A key acts with the full permissions of the account that created it: it can create runs, spend the account's credits, and read the account's runs, balance, and ledger. It can never see another account's data.
+- Credits are **prepaid**, and every run debits atomically before any work is dispatched — a leaked key can never spend more than the account's remaining balance. Revoke leaked keys immediately in the console.
+- Keys are hashed at rest.
+
+## Auth errors
+
+| Status | Meaning |
+| --- | --- |
+| `401` | Missing, malformed, or revoked key. |
+| `403` | Valid key, but the account is suspended (see [moderation](/credits-and-refunds#moderation-and-suspension)). |
+
+Error responses share one shape everywhere:
+
+```json
+{
+  "error": "invalid API key",
+  "code": "unauthorized"
+}
+```
+
+`code` is machine-readable (`validation_error`, `insufficient_credits`, `rate_limited`, …); `details` carries per-field issues on validation failures; `retry_after` accompanies `429`s. See [rate limits](/credits-and-refunds#rate-limits).

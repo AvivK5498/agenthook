@@ -1,0 +1,45 @@
+---
+title: "caption_video"
+description: "Burn styled subtitles into an existing video."
+---
+
+```
+POST /api/v1/tools/caption_video/run
+```
+
+Takes a video URL, transcribes the speech with word-level timestamps, and returns the same video with styled subtitles burned in. Two presets: `movie` (clean cinematic lower-thirds) and `tiktok` (bold word-by-word social style).
+
+Works on any video you have a URL for — including videos generated here. (If you're generating the video in the same breath, prefer [`make_video` with `captions: true`](/tools/make-video) — it chains both steps in one run.)
+
+## Arguments
+
+| Argument | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `video_url` | string (URL) | yes | — | Publicly fetchable URL of the video to caption. |
+| `style` | string | no | `"movie"` | One of `movie`, `tiktok`. |
+| `language` | string | no | `"auto"` | Spoken-language hint for transcription. Default auto-detects. |
+
+## Example
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/caption_video/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://media.agenthook.com/users/u_1/runs/run_abc123/0.mp4",
+    "style": "tiktok"
+  }'
+```
+
+## Response
+
+`202` with `run_id`; poll `GET /api/v1/runs/{run_id}`. On `completed`:
+
+- `output[0]` — the captioned MP4, on durable storage.
+- `transcript` — the full transcription text, stored on the run and full-text searchable via `GET /api/v1/generations?q=...`.
+
+On `failed`, the flat caption charge is [refunded instantly](/credits-and-refunds#instant-refunds-on-failure).
+
+## Pricing
+
+Captioning is a flat **15 credits** per video, regardless of length or style — see [Credits & refunds](/credits-and-refunds#what-runs-cost).

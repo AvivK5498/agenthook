@@ -1,0 +1,82 @@
+---
+title: "make_video"
+description: "Generate a video — talking-head with native audio — from a prompt and optional reference images."
+---
+
+```
+POST /api/v1/tools/make_video/run
+```
+
+Generates a video from a text prompt, optionally grounded in reference images. Speech is native: describe the person and write their lines in the prompt (e.g. `She says: "..."`) and the model generates matching audio and lip movement. Optionally chains [captioning](/tools/caption-video) onto the finished video in the same run.
+
+## Arguments
+
+| Argument | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | string | yes | — | What to generate, including any spoken lines. Max length is per model: **4000** chars for `seedance-2`, **2500** for `kling-3`. Over-cap prompts are rejected with a `400` — never silently truncated. |
+| `reference_images` | array of strings (URLs) | no | — | Up to **14** publicly fetchable image URLs to ground the generation (a person, a product, a setting). Attaching any requires `owns_references: true`. |
+| `owns_references` | boolean | with refs | — | Likeness-consent attestation — see [below](#owns_references-consent). |
+| `model` | string | no | `"seedance-2"` | One of `seedance-2`, `kling-3`. |
+| `quality` | string | no | `"standard"` | One of `standard`, `pro`. `standard` renders at 720p, `pro` at 1080p (each model's premium tier). Pro costs more — see [pricing](/credits-and-refunds#what-runs-cost). |
+| `duration` | number | no | `5` | Video length in seconds (positive integer, min 1). Cost scales with duration. |
+| `aspect_ratio` | string | no | `"9:16"` | One of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`. |
+| `audio` | boolean | no | `true` | Generate native audio (speech, ambience). Leave on for talking-head content. |
+| `captions` | boolean | no | `false` | When `true`, burns styled subtitles into the finished video within the same run, for an extra flat [caption charge](/credits-and-refunds#what-runs-cost). |
+| `caption_style` | string | no | `"tiktok"` | One of `movie`, `tiktok`. Only used when `captions` is `true`. |
+| `enhance_prompt` | boolean | no | `false` | Rewrite a rough prompt into a production-grade one before generation — see [below](#enhance_prompt). |
+
+## `owns_references` consent
+
+Any run that attaches `reference_images` **must** set `owns_references: true` — you attest that you own, or have the rights to use, the likenesses in the uploaded images. This applies to `make_video` and `make_image` alike.
+
+- References attached without `owns_references: true` → `400`, **no credits debited**.
+- Accepted attestations are persisted on the run record (flag, timestamp, and the API key that made it) as an audit trail.
+
+## `enhance_prompt`
+
+When `true`, your prompt is first rewritten by a prompt-writing model trained on what makes these video models perform — hook, framing, delivery — while preserving your intent and any spoken lines. The rewritten prompt is what gets generated; **both** the original and enhanced prompts are stored on the run (and are full-text searchable via `GET /api/v1/generations?q=...`).
+
+Costs **3 credits** extra. When `false` (the default), your prompt is sent to the model exactly as written.
+
+## Example — talking-head with captions
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_video/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "A man in his 30s in a gym, talking to camera, handheld selfie style. He says: \"Three exercises. Ten minutes. No equipment. Save this.\"",
+    "quality": "standard",
+    "duration": 5,
+    "aspect_ratio": "9:16",
+    "captions": true,
+    "caption_style": "tiktok"
+  }'
+```
+
+## Example — with a reference image
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/make_video/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "The person from the reference image unboxes a pair of headphones at a kitchen table and says: \"Okay, these are lighter than they look.\"",
+    "reference_images": ["https://example.com/my-face.jpg"],
+    "owns_references": true
+  }'
+```
+
+## Response
+
+`202` with the queued run:
+
+```json
+{
+  "run_id": "run_abc123",
+  "status": "queued",
+  "credits_charged": 115
+}
+```
+
+Poll `GET /api/v1/runs/{run_id}`; on `completed`, `output[0]` is the durable MP4 URL. On `failed`, credits are [refunded instantly](/credits-and-refunds#instant-refunds-on-failure).

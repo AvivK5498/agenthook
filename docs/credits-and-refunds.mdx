@@ -1,0 +1,81 @@
+---
+title: "Credits & refunds"
+description: "Prepaid credits, per-run pricing, instant refunds on failure, rate limits."
+---
+
+## How credits work
+
+**1 credit = $0.01.** Credits are prepaid: every run debits your balance atomically at creation, before any work is dispatched. If your balance can't cover a run, the API returns `402` with `code: "insufficient_credits"` and nothing is charged.
+
+Check your balance and full ledger any time:
+
+```bash
+curl https://getagenthook.com/api/v1/me \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+
+curl https://getagenthook.com/api/v1/credits/history \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+The ledger records every movement — `grant`, `debit`, `refund` — with the run it belongs to, so spend is fully auditable.
+
+## What runs cost
+
+The exact charge for a run is returned as `credits_charged` in the `202` response — that number is authoritative. The shape of the pricing:
+
+- **`make_video`** — priced per second, scaled by model and `quality` (`pro` renders 1080p and costs a multiple of `standard`'s 720p). Attaching reference images adds a small surcharge on some models.
+- **`make_image`** — priced per image (`count` multiplies), scaled by `resolution` (`1k` < `2k` < `4k`) and the routed model.
+- **`caption_video`** — flat **15 credits** per video.
+
+Add-ons, on top of the base:
+
+| Add-on | Cost |
+| --- | --- |
+| `enhance_prompt: true` (video or image) | +3 credits |
+| `captions: true` on `make_video` | +15 credits (the flat caption charge, chained into the same run) |
+
+Representative examples at current rates (subject to change — always trust `credits_charged`):
+
+| Run | Credits |
+| --- | --- |
+| `make_video`, seedance-2, `standard`, 5s | 100 |
+| `make_video`, seedance-2, `pro`, 5s | 313 |
+| `make_video`, kling-3, `standard`, 5s, audio on | 94 |
+| `make_image`, no refs (gpt-image-2), 1 image, 9:16 | 10 |
+| `make_image`, with refs (nano-banana-2), `1k`, 1 image | 12 |
+| `caption_video` | 15 |
+
+## Instant refunds on failure
+
+If a run ends in `failed` — a provider error, a moderation rejection, an infrastructure hiccup — **the full charge is refunded to your balance instantly and automatically**, as a compensating `refund` entry in the ledger. No support ticket, no waiting period. A run that got stuck without ever finishing is detected by a background sweep, marked failed, and refunded the same way.
+
+You only ever pay for runs that complete.
+
+## Trial credits
+
+New accounts receive a **one-time grant of 30 trial credits** at signup — enough to try image generation and captioning end to end. Top-ups are self-serve: buy a credit pack from the [console credits page](https://getagenthook.com/credits) — checkout is handled by Polar, credits land on your account automatically, and they never expire.
+
+## Rate limits
+
+Limits are per API key, over a one-minute window:
+
+| Bucket | Limit |
+| --- | --- |
+| Run creation (`POST /api/v1/tools/*/run`) | 10 / minute |
+| Reads (runs, generations, balance, history) | 60 / minute |
+
+Exceeding a limit returns `429` with a `Retry-After` header and a `retry_after` field (seconds) in the body:
+
+```json
+{
+  "error": "rate limit exceeded",
+  "code": "rate_limited",
+  "retry_after": 42
+}
+```
+
+Back off for `retry_after` seconds and retry. Rate-limited requests are never charged.
+
+## Moderation and suspension
+
+AgentHook is a **SFW-only** service. Generations that violate the underlying providers' content rules fail with a clear moderation error — and are refunded like any other failure. However, repeated moderation rejections accumulate strikes against the account; past a threshold the account is suspended and new runs are refused with `403`. Don't use refunds as a free retry loop on disallowed content.

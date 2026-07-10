@@ -1,0 +1,51 @@
+---
+title: "Introduction"
+description: "An agent-facing media generation API — video, images, and captions over one REST surface."
+---
+
+AgentHook is a hosted media-generation API built for AI agents. Claude Code, Cursor, n8n — anything that can run a CLI command or make an HTTP call — can create social-media-ready content: UGC-style talking-head video, images (including reference-driven edits), and burned-in captions.
+
+There is no timeline editor and no render farm to babysit. Your agent describes what it wants, the API returns a durable URL to the finished media.
+
+## The three tools
+
+| Tool | What it does |
+| --- | --- |
+| [`make_video`](/tools/make-video) | Prompt (+ optional reference images) → video with native audio. A person described in the prompt speaks the lines you write. Optionally chains captioning onto the result. |
+| [`make_image`](/tools/make-image) | Prompt (+ optional reference images) → images. With references it edits/composes from them; without, it generates from text. |
+| [`caption_video`](/tools/caption-video) | Existing video URL → the same video with styled, burned-in subtitles (`movie` or `tiktok` preset). |
+
+## How every run works
+
+All three tools share one uniform, async shape:
+
+1. `POST /api/v1/tools/{tool}/run` with a JSON body → `202` with a `run_id`. Credits are debited atomically at this moment.
+2. Poll `GET /api/v1/runs/{run_id}` until `status` is `completed` or `failed`.
+3. `completed` → `output` holds durable URLs to your media. Outputs are stored on our CDN and do not expire.
+4. `failed` → your credits are **refunded instantly and automatically**. See [Credits & refunds](/credits-and-refunds).
+
+Run states: `queued` → `processing` → `completed` | `failed`.
+
+## Built for agents
+
+- **Self-describing.** `GET /api/v1/tools` serves the full input schema for every tool — names, types, defaults, enums. Wrappers (the CLI today; MCP and a skill pack later) read schemas from the API instead of duplicating them.
+- **Deterministic validation.** The [CLI](/quickstart) pre-validates inputs locally against those schemas before spending a network call or a credit; the server enforces the same rules authoritatively.
+- **Searchable history.** `GET /api/v1/generations?q=...` full-text-searches your past runs by prompt, enhanced prompt, and transcript — so an agent can find "that video about the standing desk" without storing anything itself.
+- **Credit-metered.** Prepaid credits, atomic debits, instant refunds on failure, and a full ledger at `GET /api/v1/credits/history`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Sign up, grab a key, and generate your first talking-head video in minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Bearer API keys — how to create and use them.
+  </Card>
+  <Card title="Tool reference" icon="wrench" href="/tools/make-video">
+    Every argument, type, default, and enum for the three tools.
+  </Card>
+  <Card title="Using from Claude Code & Cursor" icon="robot" href="/agents">
+    Hand the CLI to your coding agent.
+  </Card>
+</CardGroup>
