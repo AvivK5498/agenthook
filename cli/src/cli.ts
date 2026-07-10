@@ -24,7 +24,7 @@ Run flags:
   --captions  --caption-style <movie|tiktok>  --enhance-prompt
   --video-url <url>  --style <movie|tiktok>  --count <n>  --resolution <1k|2k|4k>
 
-Every command accepts --api-url <url> (or AgentHook_API_URL; default https://localhost:3000).`;
+Every command accepts --api-url <url> (or AGENTHOOK_API_URL; default https://getagenthook.com).`;
 
 export async function runCli(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;

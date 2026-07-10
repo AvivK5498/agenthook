@@ -9,7 +9,7 @@ import { vi, type Mock } from "vitest";
 import { TOOLS_JSON_SCHEMA } from "../../core/contract";
 import type { RunResponse } from "../src/types";
 
-export const API = "https://localhost:3000";
+export const API = "https://getagenthook.com";
 export const V1 = `${API}/api/v1`;
 
 export type FetchMock = Mock<(input: unknown, init?: RequestInit) => Promise<Response>>;
@@ -25,9 +25,9 @@ export interface Harness {
 
 export function setupHarness(): Harness {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pn-cli-"));
-  process.env.AgentHook_CONFIG_DIR = dir;
-  process.env.AgentHook_POLL_MS = "1";
-  delete process.env.AgentHook_API_URL;
+  process.env.AGENTHOOK_CONFIG_DIR = dir;
+  process.env.AGENTHOOK_POLL_MS = "1";
+  delete process.env.AGENTHOOK_API_URL;
 
   const logs: string[] = [];
   const errs: string[] = [];
@@ -56,8 +56,8 @@ export function teardownHarness(h: Harness): void {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   fs.rmSync(h.dir, { recursive: true, force: true });
-  delete process.env.AgentHook_CONFIG_DIR;
-  delete process.env.AgentHook_POLL_MS;
+  delete process.env.AGENTHOOK_CONFIG_DIR;
+  delete process.env.AGENTHOOK_POLL_MS;
 }
 
 export function json(status: number, body: unknown): Response {

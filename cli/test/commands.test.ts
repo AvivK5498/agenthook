@@ -54,14 +54,14 @@ describe("login", () => {
     expect(creds.api_url).toBe("https://api.example.com");
   });
 
-  test("AgentHook_API_URL env wins over the default", async () => {
-    process.env.AgentHook_API_URL = "https://env.example.com";
+  test("AGENTHOOK_API_URL env wins over the default", async () => {
+    process.env.AGENTHOOK_API_URL = "https://env.example.com";
     h.fetchMock.mockImplementation(async (input: unknown) => {
       expect(String(input)).toBe("https://env.example.com/api/v1/me");
       return json(200, { user_id: "u", balance: 1, suspended: false });
     });
     expect(await runCli(["login", "--key", "k"])).toBe(0);
-    delete process.env.AgentHook_API_URL;
+    delete process.env.AGENTHOOK_API_URL;
   });
 });
 

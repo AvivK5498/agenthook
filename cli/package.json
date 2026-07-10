@@ -2,7 +2,20 @@
   "name": "agenthook",
   "version": "0.1.0",
   "description": "CLI for the AgentHook hosted media-generation API — generate video, images, and captions from your terminal or agent.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
+  "homepage": "https://getagenthook.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AvivK5498/agenthook.git"
+  },
+  "keywords": [
+    "ai",
+    "video-generation",
+    "image-generation",
+    "captions",
+    "agents",
+    "cli"
+  ],
   "bin": {
     "agenthook": "./dist/main.js"
   },

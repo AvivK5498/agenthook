@@ -1,5 +1,5 @@
 // Anti-drift parity: the CLI ships standalone (no runtime import of the
-// workspace), so the few values it mirrors from frozen @placeholder/core are
+// workspace), so the few values it mirrors from frozen @agenthook/core are
 // pinned here against the real thing (test-only relative imports).
 import { describe, expect, test } from "vitest";
 import { TOOLS, TOOLS_JSON_SCHEMA, validateToolInput, type ToolName } from "../../core/contract";

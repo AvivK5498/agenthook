@@ -27,7 +27,7 @@ const RUN_FLAGS: FlagSpec = {
 
 // Poll cadence: 5s (spec); overridable for tests. Every watcher gets a
 // give-up (donor rule): a wall-clock deadline + bounded consecutive misses.
-const pollIntervalMs = () => Number(process.env.AgentHook_POLL_MS || 5000);
+const pollIntervalMs = () => Number(process.env.AGENTHOOK_POLL_MS || 5000);
 const POLL_DEADLINE_MS = 60 * 60 * 1000; // the server sweep fails stuck runs at 45min; we outlast it
 const MAX_POLL_MISSES = 5;
 
