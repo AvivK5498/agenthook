@@ -54,8 +54,8 @@ Claude Code, Cursor, Windsurf, n8n, cron jobs, CI pipelines — if it can execut
 
 ## Docs
 
-Full quickstart, tool reference, and API docs: **docs coming online with launch** — until then, `agenthook tools` prints every tool and argument straight from the API.
+Full quickstart, tool reference, and API docs: **[getagenthook.com](https://getagenthook.com) — and** — until then, `agenthook tools` prints every tool and argument straight from the API.
 
 ## License
 
-The CLI and skill pack are Apache-2.0. The hosted generation service is a commercial product — [create an account](#) to get an API key and trial credits.
+The CLI and skill pack are Apache-2.0. The hosted generation service is a commercial product — [create an account](https://getagenthook.com/signup) to get an API key and trial credits.
