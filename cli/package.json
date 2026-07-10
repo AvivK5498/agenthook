@@ -1,5 +1,5 @@
 {
-  "name": "agenthook-cli",
+  "name": "getagenthook",
   "version": "0.1.0",
   "description": "CLI for the AgentHook hosted media-generation API — generate video, images, and captions from your terminal or agent.",
   "license": "Apache-2.0",
