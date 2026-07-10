@@ -50,7 +50,19 @@ You: "Make a TikTok about our pricing launch and give me the link."
 Agent: runs agenthook, returns the finished MP4.
 ```
 
-Claude Code, Cursor, Windsurf, n8n, cron jobs, CI pipelines — if it can execute a command, it can produce video. MCP server and Claude Skill pack: coming next.
+Claude Code, Cursor, Windsurf, n8n, cron jobs, CI pipelines — if it can execute a command, it can produce video.
+
+## Skill
+
+This repo ships an agent skill. It tells your agent how to authenticate without leaking a key, what each run costs before it spends, how to poll a video job, and how to handle every error. Install it with one command:
+
+[![skills.sh](https://skills.sh/b/AvivK5498/agenthook)](https://skills.sh/AvivK5498/agenthook)
+
+```bash
+npx skills add AvivK5498/agenthook
+```
+
+The skill lives at [`skills/agenthook/`](./skills/agenthook/). Read `SKILL.md` to see exactly what your agent will be told.
 
 ## Docs
 
