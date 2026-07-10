@@ -1,0 +1,26 @@
+{
+  "name": "placeholder-name",
+  "version": "0.1.0",
+  "description": "CLI for the PLACEHOLDER_NAME hosted media-generation API — generate video, images, and captions from your terminal or agent.",
+  "license": "UNLICENSED",
+  "bin": {
+    "placeholder-name": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
