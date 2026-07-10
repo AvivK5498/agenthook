@@ -54,14 +54,14 @@ describe("login", () => {
     expect(creds.api_url).toBe("https://api.example.com");
   });
 
-  test("PLACEHOLDER_NAME_API_URL env wins over the default", async () => {
-    process.env.PLACEHOLDER_NAME_API_URL = "https://env.example.com";
+  test("AgentHook_API_URL env wins over the default", async () => {
+    process.env.AgentHook_API_URL = "https://env.example.com";
     h.fetchMock.mockImplementation(async (input: unknown) => {
       expect(String(input)).toBe("https://env.example.com/api/v1/me");
       return json(200, { user_id: "u", balance: 1, suspended: false });
     });
     expect(await runCli(["login", "--key", "k"])).toBe(0);
-    delete process.env.PLACEHOLDER_NAME_API_URL;
+    delete process.env.AgentHook_API_URL;
   });
 });
 
@@ -138,7 +138,7 @@ describe("balance", () => {
     seedCredentials(h.dir, "revoked");
     h.fetchMock.mockImplementation(async () => json(401, { error: "invalid api key" }));
     expect(await runCli(["balance"])).toBe(1);
-    expect(h.errs.join("\n")).toContain("placeholder-name login");
+    expect(h.errs.join("\n")).toContain("agenthook login");
   });
 });
 
@@ -174,6 +174,6 @@ describe("dispatcher", () => {
 
   test("help exits 0 with usage", async () => {
     expect(await runCli(["--help"])).toBe(0);
-    expect(h.logs.join("\n")).toContain("Usage: placeholder-name");
+    expect(h.logs.join("\n")).toContain("Usage: agenthook");
   });
 });

@@ -6,9 +6,9 @@ import { run } from "./commands/run";
 import { tools } from "./commands/tools";
 import { ApiError, describeApiError } from "./http";
 
-const USAGE = `placeholder-name — hosted media generation for agents
+const USAGE = `agenthook — hosted media generation for agents
 
-Usage: placeholder-name <command> [flags]
+Usage: agenthook <command> [flags]
 
 Commands:
   login [--key <key>]                     store your API key (chmod 600)
@@ -24,7 +24,7 @@ Run flags:
   --captions  --caption-style <movie|tiktok>  --enhance-prompt
   --video-url <url>  --style <movie|tiktok>  --count <n>  --resolution <1k|2k|4k>
 
-Every command accepts --api-url <url> (or PLACEHOLDER_NAME_API_URL; default https://localhost:3000).`;
+Every command accepts --api-url <url> (or AgentHook_API_URL; default https://localhost:3000).`;
 
 export async function runCli(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;

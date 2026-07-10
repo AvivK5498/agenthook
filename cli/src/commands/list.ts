@@ -18,7 +18,7 @@ export async function list(argv: string[]): Promise<number> {
   const apiUrl = resolveApiUrl(flags["api-url"] as string | undefined);
   const key = storedApiKey();
   if (!key) {
-    console.error("Not logged in — run `placeholder-name login` first.");
+    console.error("Not logged in — run `agenthook login` first.");
     return 1;
   }
   const res = await api<GenerationsResponse>(apiUrl, "/generations", {

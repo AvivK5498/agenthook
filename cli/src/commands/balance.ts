@@ -11,7 +11,7 @@ export async function balance(argv: string[]): Promise<number> {
   }
   const key = storedApiKey();
   if (!key) {
-    console.error("Not logged in — run `placeholder-name login` first.");
+    console.error("Not logged in — run `agenthook login` first.");
     return 1;
   }
   const me = await api<MeResponse>(resolveApiUrl(flags["api-url"] as string | undefined), "/me", { key });

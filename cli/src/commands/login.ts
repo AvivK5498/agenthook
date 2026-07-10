@@ -43,7 +43,7 @@ export async function login(argv: string[]): Promise<number> {
     // API unreachable: save anyway (key may be fine), but say so.
     const p = saveCredentials(creds);
     console.error(`Could not verify the key against ${apiUrl} (${(e as Error).message}).`);
-    console.error(`Saved to ${p} anyway — verify later with \`placeholder-name balance\`.`);
+    console.error(`Saved to ${p} anyway — verify later with \`agenthook balance\`.`);
     return 0;
   }
 }

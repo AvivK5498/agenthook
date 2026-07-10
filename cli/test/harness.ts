@@ -25,9 +25,9 @@ export interface Harness {
 
 export function setupHarness(): Harness {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pn-cli-"));
-  process.env.PLACEHOLDER_NAME_CONFIG_DIR = dir;
-  process.env.PLACEHOLDER_NAME_POLL_MS = "1";
-  delete process.env.PLACEHOLDER_NAME_API_URL;
+  process.env.AgentHook_CONFIG_DIR = dir;
+  process.env.AgentHook_POLL_MS = "1";
+  delete process.env.AgentHook_API_URL;
 
   const logs: string[] = [];
   const errs: string[] = [];
@@ -56,8 +56,8 @@ export function teardownHarness(h: Harness): void {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   fs.rmSync(h.dir, { recursive: true, force: true });
-  delete process.env.PLACEHOLDER_NAME_CONFIG_DIR;
-  delete process.env.PLACEHOLDER_NAME_POLL_MS;
+  delete process.env.AgentHook_CONFIG_DIR;
+  delete process.env.AgentHook_POLL_MS;
 }
 
 export function json(status: number, body: unknown): Response {

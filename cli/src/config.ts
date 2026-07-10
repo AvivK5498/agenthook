@@ -5,9 +5,9 @@ import * as path from "node:path";
 export const BASE_PATH = "/api/v1";
 export const DEFAULT_API_URL = "https://localhost:3000";
 
-/** Config home — overridable for tests via PLACEHOLDER_NAME_CONFIG_DIR. */
+/** Config home — overridable for tests via AgentHook_CONFIG_DIR. */
 export function configDir(): string {
-  return process.env.PLACEHOLDER_NAME_CONFIG_DIR || path.join(os.homedir(), ".placeholder-name");
+  return process.env.AgentHook_CONFIG_DIR || path.join(os.homedir(), ".agenthook");
 }
 
 export function credentialsPath(): string {
@@ -36,10 +36,10 @@ export function saveCredentials(creds: Credentials): string {
   return p;
 }
 
-/** Resolution order: --api-url flag > PLACEHOLDER_NAME_API_URL > stored > default. */
+/** Resolution order: --api-url flag > AgentHook_API_URL > stored > default. */
 export function resolveApiUrl(flagValue?: string): string {
   const url =
-    flagValue || process.env.PLACEHOLDER_NAME_API_URL || loadCredentials().api_url || DEFAULT_API_URL;
+    flagValue || process.env.AgentHook_API_URL || loadCredentials().api_url || DEFAULT_API_URL;
   return url.replace(/\/+$/, "");
 }
 

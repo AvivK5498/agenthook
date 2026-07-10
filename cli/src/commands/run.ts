@@ -27,7 +27,7 @@ const RUN_FLAGS: FlagSpec = {
 
 // Poll cadence: 5s (spec); overridable for tests. Every watcher gets a
 // give-up (donor rule): a wall-clock deadline + bounded consecutive misses.
-const pollIntervalMs = () => Number(process.env.PLACEHOLDER_NAME_POLL_MS || 5000);
+const pollIntervalMs = () => Number(process.env.AgentHook_POLL_MS || 5000);
 const POLL_DEADLINE_MS = 60 * 60 * 1000; // the server sweep fails stuck runs at 45min; we outlast it
 const MAX_POLL_MISSES = 5;
 
@@ -39,13 +39,13 @@ export async function run(argv: string[]): Promise<number> {
   }
   const tool = positionals[0];
   if (!tool) {
-    console.error("Usage: placeholder-name run <tool> [flags] — see `placeholder-name tools`");
+    console.error("Usage: agenthook run <tool> [flags] — see `agenthook tools`");
     return 1;
   }
   const apiUrl = resolveApiUrl(flags["api-url"] as string | undefined);
   const key = storedApiKey();
   if (!key) {
-    console.error("Not logged in — run `placeholder-name login` first.");
+    console.error("Not logged in — run `agenthook login` first.");
     return 1;
   }
 
@@ -98,7 +98,7 @@ export async function run(argv: string[]): Promise<number> {
       if (misses >= MAX_POLL_MISSES) {
         console.error(
           `Lost contact with the API (${MAX_POLL_MISSES} consecutive failures: ${(e as Error).message}).\n` +
-            `The run may still finish — check later with: placeholder-name list`,
+            `The run may still finish — check later with: agenthook list`,
         );
         return 1;
       }
@@ -119,7 +119,7 @@ export async function run(argv: string[]): Promise<number> {
   }
   console.error(
     `Run ${created.run_id} did not finish within ${POLL_DEADLINE_MS / 60_000} minutes — ` +
-      `giving up on polling. Check later with: placeholder-name list`,
+      `giving up on polling. Check later with: agenthook list`,
   );
   return 1;
 }

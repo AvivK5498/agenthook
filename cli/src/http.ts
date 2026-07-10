@@ -74,8 +74,8 @@ export async function api<T>(apiUrl: string, pathname: string, opts: ApiRequestO
 export function describeApiError(e: ApiError): string {
   const lines = [e.message];
   for (const d of e.details ?? []) lines.push(`  ${d.path}: ${d.message}`);
-  if (e.status === 401) lines.push("  Run `placeholder-name login` with a valid API key.");
-  if (e.status === 402) lines.push("  Not enough credits — check `placeholder-name balance`.");
+  if (e.status === 401) lines.push("  Run `agenthook login` with a valid API key.");
+  if (e.status === 402) lines.push("  Not enough credits — check `agenthook balance`.");
   if (e.status === 429) lines.push(`  Rate limited — retry in ${e.retryAfter ?? "a few"}s.`);
   return lines.join("\n");
 }

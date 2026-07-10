@@ -21,7 +21,7 @@ export async function tools(argv: string[]): Promise<number> {
     }
     console.log("");
   }
-  console.log(`Run one with: placeholder-name run <tool> --prompt "..." [flags]`);
+  console.log(`Run one with: agenthook run <tool> --prompt "..." [flags]`);
   return 0;
 }
 

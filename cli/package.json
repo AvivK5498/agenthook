@@ -1,10 +1,10 @@
 {
-  "name": "placeholder-name",
+  "name": "agenthook",
   "version": "0.1.0",
-  "description": "CLI for the PLACEHOLDER_NAME hosted media-generation API — generate video, images, and captions from your terminal or agent.",
+  "description": "CLI for the AgentHook hosted media-generation API — generate video, images, and captions from your terminal or agent.",
   "license": "UNLICENSED",
   "bin": {
-    "placeholder-name": "./dist/main.js"
+    "agenthook": "./dist/main.js"
   },
   "files": [
     "dist"
