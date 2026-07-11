@@ -6,7 +6,7 @@
 
 Generate scroll-stopping UGC video, images, and captioned clips from Claude Code, Cursor, n8n — or any agent that can run a shell command.
 
-[![npm](https://img.shields.io/badge/npm-agenthook-c6fe1e?style=flat-square)](https://www.npmjs.com/package/agenthook)
+[![npm](https://img.shields.io/badge/npm-getagenthook-c6fe1e?style=flat-square)](https://www.npmjs.com/package/getagenthook)
 [![license](https://img.shields.io/badge/license-Apache--2.0-green?style=flat-square)](./LICENSE)
 
 </div>
@@ -15,16 +15,23 @@ Generate scroll-stopping UGC video, images, and captioned clips from Claude Code
 
 Your agent can write code, browse the web, and manage your calendar. Now it can ship **finished, social-ready video**.
 
+## Get started — paste this into your agent
+
+```text
+Install the agenthook skill by running: npx skills add AvivK5498/agenthook --yes
+Then follow the skill to set up AgentHook and make me a test video.
+```
+
+That's the entire setup. The skill teaches your agent everything else: how to authenticate without leaking a key (it will send you a link to approve), what each run costs before it spends, and how to go from a one-line idea to a finished MP4:
+
 ```bash
-npm i -g getagenthook
-agenthook login
 agenthook run make_video \
   --prompt "A friendly woman in her late 20s, soft daylight kitchen, speaking to camera: 'Okay — this changed my whole morning routine. You have to try it.'" \
   --quality standard --captions --caption-style tiktok
 # → https://…/users/you/runs/…/0.mp4  (vertical, spoken, subtitled — ready to post)
 ```
 
-That's the whole workflow. No timeline editor, no rendering farm, no designer in the loop.
+No timeline editor, no rendering farm, no designer in the loop.
 
 ## What your agent gets
 
@@ -52,21 +59,17 @@ Agent: runs agenthook, returns the finished MP4.
 
 Claude Code, Cursor, Windsurf, n8n, cron jobs, CI pipelines — if it can execute a command, it can produce video.
 
-## Skill
+## The skill
 
-This repo ships an agent skill. It tells your agent how to authenticate without leaking a key, what each run costs before it spends, how to poll a video job, and how to handle every error. Install it with one command:
+The paste-into-your-agent line above installs this repo's agent skill from [skills.sh](https://skills.sh/AvivK5498/agenthook). It covers auth, pricing, polling etiquette, and every error case — read [`skills/agenthook/SKILL.md`](./skills/agenthook/SKILL.md) to see exactly what your agent will be told.
 
 [![skills.sh](https://skills.sh/b/AvivK5498/agenthook)](https://skills.sh/AvivK5498/agenthook)
 
-```bash
-npx skills add AvivK5498/agenthook
-```
-
-The skill lives at [`skills/agenthook/`](./skills/agenthook/). Read `SKILL.md` to see exactly what your agent will be told.
+Prefer the raw CLI without the skill? `npm i -g getagenthook`, then `agenthook auth:login`.
 
 ## Docs
 
-Full quickstart, tool reference, and API docs: **[getagenthook.com](https://getagenthook.com) — and** — until then, `agenthook tools` prints every tool and argument straight from the API.
+Full docs: **[agenthook.mintlify.app](https://agenthook.mintlify.app)** · agent-readable reference: [getagenthook.com/llms-full.txt](https://getagenthook.com/llms-full.txt) · `agenthook tools` prints every tool straight from the live API.
 
 ## License
 
