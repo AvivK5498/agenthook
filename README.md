@@ -28,7 +28,7 @@ Your agent installs the [skill](./skills/agenthook/SKILL.md), sends you a link t
 
 ## Agents: start here
 
-Read https://getagenthook.com/llms-full.txt — it is the full API contract, generated from the live schemas. Then:
+Read https://getagenthook.com/llms-full.txt first. It is the full API contract, generated from the live schemas. Then:
 
 ```bash
 npm i -g getagenthook          # CLI (command: agenthook)
