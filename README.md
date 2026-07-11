@@ -7,7 +7,7 @@
 UGC video, images, and captioned clips from Claude Code, Cursor, n8n, or any shell.
 One REST API. Your agent gets a finished MP4.
 
-[![npm](https://img.shields.io/badge/npm-getagenthook-c6fe1e?style=flat-square)](https://www.npmjs.com/package/getagenthook)
+[![npm](https://img.shields.io/npm/v/getagenthook?color=c6fe1e&label=npm&style=flat-square)](https://www.npmjs.com/package/getagenthook)
 [![skills.sh](https://skills.sh/b/AvivK5498/agenthook)](https://skills.sh/AvivK5498/agenthook)
 [![license](https://img.shields.io/badge/license-Apache--2.0-green?style=flat-square)](./LICENSE)
 
