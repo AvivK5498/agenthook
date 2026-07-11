@@ -18,7 +18,7 @@ Generates a video from a text prompt, optionally grounded in reference images. S
 | `owns_references` | boolean | with refs | — | Likeness-consent attestation — see [below](#owns_references-consent). |
 | `model` | string | no | `"seedance-2"` | One of `seedance-2`, `kling-3`. |
 | `quality` | string | no | `"standard"` | One of `standard`, `pro`. `standard` renders at 720p, `pro` at 1080p (each model's premium tier). Pro costs more — see [pricing](/credits-and-refunds#what-runs-cost). |
-| `duration` | number | no | `5` | Video length in seconds (positive integer, min 1). Cost scales with duration. |
+| `duration` | number | no | `5` | Video length in seconds. The server accepts `4, 5, 6, 8, 10, 12, 15` on `seedance-2` and `3, 5, 8, 10, 15` on `kling-3`; other values are rejected with a `400`. Cost scales with duration. |
 | `aspect_ratio` | string | no | `"9:16"` | One of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`. |
 | `audio` | boolean | no | `true` | Generate native audio (speech, ambience). Leave on for talking-head content. |
 | `captions` | boolean | no | `false` | When `true`, burns styled subtitles into the finished video within the same run, for an extra flat [caption charge](/credits-and-refunds#what-runs-cost). |

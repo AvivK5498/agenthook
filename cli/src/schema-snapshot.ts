@@ -23,7 +23,13 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
       },
       model: { type: "string", enum: ["seedance-2", "kling-3"], default: "seedance-2" },
       quality: { type: "string", enum: ["standard", "pro"], default: "standard" },
-      duration: { type: "number", default: 5, min: 1 },
+      duration: {
+        type: "number",
+        default: 5,
+        min: 1,
+        description:
+          "Video length in seconds. Allowed values depend on model — seedance-2: 4, 5, 6, 8, 10, 12, 15; kling-3: 3, 5, 8, 10, 15.",
+      },
       aspect_ratio: {
         type: "string",
         enum: ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],

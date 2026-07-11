@@ -9,6 +9,7 @@ import { run } from "./commands/run";
 import { tools } from "./commands/tools";
 import { exitCodeForApiError } from "./exit";
 import { ApiError, describeApiError } from "./http";
+import { VERSION } from "./version";
 
 const USAGE = `agenthook — hosted media generation for agents
 
@@ -25,6 +26,7 @@ Commands:
   balance                                 credit balance
   history                                 credit ledger
   jobs                                    local run ledger (~/.agenthook/jobs.jsonl)
+  version                                 print the CLI version (also --version / -v)
 
 Run flags:
   --prompt <text>  --ref <url> (repeatable)  --owns-references  --model <m>
@@ -63,6 +65,13 @@ export async function runCli(argv: string[]): Promise<number> {
         return await history(rest);
       case "jobs":
         return await jobs(rest);
+      case "version":
+      case "--version":
+      case "-v":
+        // Agents probe this to detect a stale install — must exit 0 with the
+        // package version, never fall through to "Unknown command" (exit 1).
+        console.log(VERSION);
+        return 0;
       case undefined:
       case "help":
       case "--help":

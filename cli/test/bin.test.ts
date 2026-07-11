@@ -41,4 +41,13 @@ describe("built binary (dist entrypoint)", () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toContain('Unknown command "frobnicate"');
   });
+
+  it("version prints the package version (semver-shaped) and exits 0", () => {
+    for (const args of [["version"], ["--version"], ["-v"]]) {
+      const r = runBin(args);
+      expect(r.status, `${args.join(" ")} exit`).toBe(0);
+      expect(r.stdout.trim(), `${args.join(" ")} output`).toMatch(/^\d+\.\d+\.\d+/);
+      expect(r.stdout.trim()).toBe(pkg.version);
+    }
+  });
 });

@@ -257,6 +257,23 @@ describe("run — submit + poll", () => {
     expect(h.errs.join("\n")).toContain("balance");
   });
 
+  test("submit 400 under --json carries the validation details array", async () => {
+    h.fetchMock.mockImplementation(async () =>
+      json(400, {
+        error: "validation failed",
+        code: "validation_error",
+        details: [{ path: "duration", message: "duration 7 not allowed for kling-3" }],
+      }),
+    );
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--json"]);
+    expect(code).toBe(3); // VALIDATION
+    expect(JSON.parse(h.logs[0]!)).toEqual({
+      error: "validation failed",
+      exit_code: 3,
+      details: [{ path: "duration", message: "duration 7 not allowed for kling-3" }],
+    });
+  });
+
   test("poll gives up after bounded consecutive failures", async () => {
     let calls = 0;
     h.fetchMock.mockImplementation(async (_input: unknown, init?: RequestInit) => {
@@ -329,6 +346,23 @@ describe("run — --dry-run (free pre-flight)", () => {
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run"]);
     expect(code).toBe(3); // VALIDATION
     expect(h.errs.join("\n")).toContain("bad request");
+  });
+
+  test("server 400 under --json carries the validation details array (no re-run needed)", async () => {
+    h.fetchMock.mockImplementation(async () =>
+      json(400, {
+        error: "validation failed",
+        code: "validation_error",
+        details: [{ path: "duration", message: "duration 7 not allowed for kling-3" }],
+      }),
+    );
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run", "--json"]);
+    expect(code).toBe(3); // VALIDATION
+    expect(JSON.parse(h.logs[0]!)).toEqual({
+      error: "validation failed",
+      exit_code: 3,
+      details: [{ path: "duration", message: "duration 7 not allowed for kling-3" }],
+    });
   });
 
   test("server 402 on a dry-run surfaces credits exit + top-up url under --json", async () => {

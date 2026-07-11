@@ -90,7 +90,7 @@ export async function run(argv: string[]): Promise<number> {
     } catch (e) {
       if (e instanceof ApiError) {
         const code = exitCodeForApiError(e);
-        if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined);
+        if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined, e.details);
         else console.error(describeApiError(e));
         return code;
       }
@@ -111,7 +111,7 @@ export async function run(argv: string[]): Promise<number> {
   } catch (e) {
     if (e instanceof ApiError) {
       const code = exitCodeForApiError(e);
-      if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined);
+      if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined, e.details);
       else console.error(describeApiError(e));
       return code;
     }
@@ -209,9 +209,25 @@ function emit(obj: unknown): void {
   console.log(JSON.stringify(obj));
 }
 
-/** Human message to stderr, or a JSON error object to stdout under --json. */
-function emitError(asJson: boolean, message: string, code: ExitCode, top_up_url?: string): void {
-  if (asJson) console.log(JSON.stringify({ error: message, exit_code: code, ...(top_up_url ? { top_up_url } : {}) }));
+/** Human message to stderr, or a JSON error object to stdout under --json.
+ * A server 400 carries a `details: [{path,message}]` array naming the offending
+ * params — surfaced in the JSON so an agent needn't re-run without --json. */
+function emitError(
+  asJson: boolean,
+  message: string,
+  code: ExitCode,
+  top_up_url?: string,
+  details?: { path: string; message: string }[],
+): void {
+  if (asJson)
+    console.log(
+      JSON.stringify({
+        error: message,
+        exit_code: code,
+        ...(details && details.length ? { details } : {}),
+        ...(top_up_url ? { top_up_url } : {}),
+      }),
+    );
   else console.error(message);
 }
 

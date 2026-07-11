@@ -17,7 +17,7 @@ Generate a video (talking-head parity via Seedance native audio) from a prompt a
 | `prompt` | string | yes | — | max 4000 chars (seedance-2); 2500 for kling-3 |
 | `model` | string | no | `seedance-2` | `seedance-2`, `kling-3` |
 | `quality` | string | no | `standard` | `standard` (720p), `pro` (1080p) |
-| `duration` | number | no | `5` | seconds, ≥ 1 |
+| `duration` | number | no | `5` | seconds — server-enforced per model: `4, 5, 6, 8, 10, 12, 15` (seedance-2); `3, 5, 8, 10, 15` (kling-3) |
 | `aspect_ratio` | string | no | `9:16` | `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9` |
 | `audio` | boolean | no | `true` | CLI: `--no-audio` to mute |
 | `captions` | boolean | no | `false` | burns captions in-run (+15 credits) |

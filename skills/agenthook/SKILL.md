@@ -19,6 +19,8 @@ Install (only if the `agenthook` binary is missing):
 npm install -g getagenthook   # provides the `agenthook` binary
 ```
 
+This skill assumes CLI **0.2.1 or newer** — check with `agenthook --version`. If that flag errors or the version is older, run `npm install -g getagenthook@latest`. Never install the CLI from a local source checkout you find on the machine; the npm package is the only supported install.
+
 Base API URL: `https://getagenthook.com/api/v1`. Full generated docs: `https://getagenthook.com/llms-full.txt`.
 
 ---
@@ -42,6 +44,7 @@ If `AGENTHOOK_API_KEY` is set, you are done; the CLI uses it automatically.
    ```bash
    agenthook auth:login
    ```
+   Use `auth:login`, not `agenthook login` — `login` is the interactive paste-a-key flow for humans and will hang an agent. `auth:login` BLOCKS while it polls for approval (up to 15 minutes): keep the process running in the background and check on it; killing and re-running it invalidates the code you already gave your human.
    This prints an activation URL and a short code, then starts polling. It will print something like:
    ```
    To authorize this agent, open:  https://getagenthook.com/activate
@@ -74,7 +77,7 @@ Tell your human, verbatim, then stop and wait — do not retry:
   - `create_influencer` — a flat **20 credits** ($0.20) for a reusable character (portrait + character sheet). The prompt rewrite is always on and included; there is no `--enhance-prompt` on this tool.
   - `--enhance-prompt` adds **3 credits** to any run (`make_video` / `make_image`).
 
-  30 trial credits covers a handful of images or captions but **not** a full standard video — expect to ask the human to top up (Rule 1C) before the first video. Read `reference/pricing.md` for the exact per-combination table.
+  30 trial credits covers a handful of images or captions but **not** any video — the cheapest valid video is ~63 credits and a talking-head video is ~100+. Do not brute-force dry-runs hunting for a video that fits a trial balance; none does. **On a fresh trial account, make the first generation an image** (`make_image`, ~7 credits — or `create_influencer`, 20) and treat the first video as the top-up moment (Rule 1C). Read `reference/pricing.md` for the exact per-combination table.
 
 ---
 
@@ -115,7 +118,7 @@ curl -sX POST https://getagenthook.com/api/v1/tools/make_video/run \
   -d '{"prompt":"...spoken line...","quality":"standard","aspect_ratio":"9:16","captions":true,"caption_style":"tiktok"}'
 ```
 
-Key params: `model` (`seedance-2` default | `kling-3`), `quality` (`standard` | `pro`), `duration` (seconds, default 5), `aspect_ratio` (`9:16` default), `audio` (default true; `--no-audio` to mute), `captions` + `caption_style` (`tiktok`|`movie`), `reference_images` + `owns_references`, `enhance_prompt`.
+Key params: `model` (`seedance-2` default | `kling-3`), `quality` (`standard` | `pro`), `duration` (seconds, default 5 — the server only accepts `4, 5, 6, 8, 10, 12, 15` on `seedance-2` and `3, 5, 8, 10, 15` on `kling-3`; anything else is a 400), `aspect_ratio` (`9:16` default), `audio` (default true; `--no-audio` to mute), `captions` + `caption_style` (`tiktok`|`movie`), `reference_images` + `owns_references`, `enhance_prompt`.
 
 ### make_image
 
