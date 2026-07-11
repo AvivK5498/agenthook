@@ -24,7 +24,7 @@ Generate a video (talking-head parity via Seedance native audio) from a prompt a
 | `caption_style` | string | no | `tiktok` | `movie`, `tiktok` |
 | `reference_images` | string[] | no | — | up to 14 URLs; requires `owns_references: true` |
 | `owns_references` | boolean | no | — | must be `true` when `reference_images` present (likeness consent) |
-| `enhance_prompt` | boolean | no | `false` | rewrites the prompt (+3 credits) |
+| `enhance_prompt` | boolean | no | `false` | improves the result from a short prompt (+3 credits) |
 | `influencer` | string | no | — | slug of a saved influencer; server attaches its portrait+sheet as refs and prepends its appearance to the prompt. Seedance adds the +10% ref surcharge; kling caps user refs at 2 alongside it (4 total). Unknown slug → `400`, no debit |
 
 CLI flags: `--prompt`, `--model`, `--quality`, `--duration`, `--aspect-ratio`, `--no-audio`, `--captions`, `--caption-style`, `--ref <url>` (repeatable), `--owns-references`, `--enhance-prompt`, `--influencer <slug>`.
@@ -61,11 +61,11 @@ CLI flags: `--video-url`, `--style`, `--language`.
 
 ## create_influencer
 
-Create a reusable, account-bound character: a hero portrait + a composite multi-view character sheet. Flat 20 credits. The idea prompt is rewritten server-side before generation (always on — no `enhance_prompt` on this tool). On success, `output[0]` is the portrait and `output[1]` the character sheet, both saved to the account.
+Create a reusable, account-bound character: a hero portrait + a composite multi-view character sheet. Flat 20 credits. Give a short idea for `prompt` and a `name`. On success, `output[0]` is the portrait and `output[1]` the character sheet, both saved to the account.
 
 | param | type | required | default | values / notes |
 |-------|------|----------|---------|----------------|
-| `prompt` | string | yes | — | a rough idea; rewritten server-side into a portrait prompt |
+| `prompt` | string | yes | — | a short idea describing the character |
 | `name` | string | yes | — | display name, 1–60 chars |
 | `slug` | string | no | derived from `name` | lowercase `[a-z0-9-]`, ≤40; the handle for `--influencer`; unique per account (collision → `409`) |
 

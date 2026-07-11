@@ -74,8 +74,8 @@ Tell your human, verbatim, then stop and wait — do not retry:
   - `make_video` — roughly **90–650 credits** ($0.90–$6.50) depending on model, quality (`standard`/`pro`), and duration. A default 5-second standard video is ~100 credits. `--captions` adds 15.
   - `make_image` — roughly **10–96 credits** ($0.10–$0.96) depending on model, resolution, and `count`. A single default image is ~10–12 credits.
   - `caption_video` — a flat **15 credits** ($0.15).
-  - `create_influencer` — a flat **20 credits** ($0.20) for a reusable character (portrait + character sheet). The prompt rewrite is always on and included; there is no `--enhance-prompt` on this tool.
-  - `--enhance-prompt` adds **3 credits** to any run (`make_video` / `make_image`).
+  - `create_influencer` — a flat **20 credits** ($0.20) for a reusable character (portrait + character sheet). No `--enhance-prompt` flag on this tool.
+  - `--enhance-prompt` adds **3 credits** to a `make_video` / `make_image` run.
 
   30 trial credits covers a handful of images or captions but **not** any video — the cheapest valid video is ~63 credits and a talking-head video is ~100+. Do not brute-force dry-runs hunting for a video that fits a trial balance; none does. **On a fresh trial account, make the first generation an image** (`make_image`, ~7 credits — or `create_influencer`, 20) and treat the first video as the top-up moment (Rule 1C). Read `reference/pricing.md` for the exact per-combination table.
 
@@ -95,10 +95,24 @@ Tell your human, verbatim, then stop and wait — do not retry:
 
 ---
 
-## How to prompt (read this before writing any prompt)
+## How to prompt
 
-- **Default to `--enhance-prompt` and keep your prompt SHORT.** The server-side rewrite (+3 credits) knows each model's grammar — Seedance's camera/audio conventions, GPT Image 2's editorial style — better than a generic hand-written prompt. Pass the *intent* ("Maya at a Bangkok night market, street-style look") and let the rewrite produce the shot description. Only skip it when your human supplied an exact script or shot list they want verbatim. Do not bolt on prompt-engineering boilerplate ("photorealistic, no text, no logos") — the rewrite handles that.
-- **`--count N` is N variations of ONE prompt, not N different subjects.** For a set of distinct looks/scenes (a lookbook, a series), submit one run per look, each with its own short prompt. Listing several outfits or scenes inside a single prompt produces collage/grid images — one scene, one outfit, one location per prompt.
+- **Add `--enhance-prompt` for the best results.** Write the intent in a sentence or two — subject, setting, mood — and let the flag do the rest:
+  ```bash
+  agenthook run make_video --enhance-prompt \
+    --prompt "Maya at a Bangkok night market at dusk, street-style look, talking to camera"
+  ```
+  When your human gives you an exact script or shot list to keep word-for-word, submit that text as the prompt:
+  ```bash
+  agenthook run make_video --prompt "<the human's exact script, verbatim>"
+  ```
+- **One prompt describes one scene.** For a set of distinct looks (a lookbook, a series), send one run per look:
+  ```bash
+  agenthook run make_image --influencer maya --enhance-prompt --prompt "linen resort dress by the pool"
+  agenthook run make_image --influencer maya --enhance-prompt --prompt "street-style crop top at the night market"
+  agenthook run make_image --influencer maya --enhance-prompt --prompt "elegant rooftop dinner look at sunset"
+  ```
+  Reach for `--count N` when you want several variations of that one scene in a single run.
 
 ---
 
@@ -163,7 +177,7 @@ Key params: `video_url` (required), `style` (`movie` default | `tiktok`), `langu
 
 ### create_influencer
 
-Create a **reusable, account-bound character** the user can reference across many later runs. From a rough idea and a name, the server produces a hero portrait + a composite multi-view character sheet and saves them to the account. Flat **20 credits**. The idea prompt is rewritten server-side before generation (always on — there is no `--enhance-prompt` on this tool). `output[0]` is the portrait, `output[1]` the character sheet.
+Create a **reusable, account-bound character** the user can reference across many later runs. Give a short idea and a name; the tool produces a hero portrait + a composite multi-view character sheet and saves them to the account. Flat **20 credits**. `output[0]` is the portrait, `output[1]` the character sheet.
 
 ```bash
 agenthook run create_influencer \
@@ -189,7 +203,11 @@ agenthook run make_image --influencer maya \
 ```
 
 - Identity holds across generations but is **strong, not pixel-perfect** — expect small drift in fine details.
-- **One look per run.** The influencer's character sheet is itself a multi-panel reference, so a prompt that lists several outfits/scenes strongly tends toward collage output. For a lookbook or series, submit one short prompt per look (ideally with `--enhance-prompt`), not one multi-outfit prompt with `--count`.
+- **One look per run.** Describe a single outfit and setting in each prompt, and send a separate run for each look in a series (see *How to prompt*):
+  ```bash
+  agenthook run make_image --influencer maya --enhance-prompt --prompt "white linen dress on a sunlit balcony"
+  agenthook run make_image --influencer maya --enhance-prompt --prompt "black evening gown at a rooftop bar"
+  ```
 - **No `--owns-references` for the influencer's own refs** (they are platform-generated). Any *additional* `reference_images` you attach yourself still require `--owns-references`.
 - On `seedance-2` a referenced run carries the standard **+10%** reference surcharge; on `kling-3` the influencer takes 2 of the 4 ref slots, so you can attach **at most 2** of your own refs alongside it.
 - An unknown slug is rejected `400` **before any debit**, naming the slug.

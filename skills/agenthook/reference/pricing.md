@@ -52,7 +52,7 @@ Flat **15 credits** ($0.15) per video, regardless of length.
 
 ### create_influencer
 
-Flat **20 credits** ($0.20) per influencer, regardless of the prompt. The always-on prompt rewrite, the hero portrait, and the multi-view character sheet are all included — deliberately priced so a trial account can create a character and still generate images of it. `--dry-run` reports 20. Reusing an influencer via `--influencer` on `make_video` / `make_image` is priced as the underlying run (a `seedance-2` referenced run carries the standard +10% reference surcharge).
+Flat **20 credits** ($0.20) per influencer, regardless of the prompt — the hero portrait and the multi-view character sheet are both included, and there is no `enhance_prompt` add-on on this tool. Deliberately priced so a trial account can create a character and still generate images of it. `--dry-run` reports 20. Reusing an influencer via `--influencer` on `make_video` / `make_image` is priced as the underlying run (a `seedance-2` referenced run carries the standard +10% reference surcharge).
 
 ## What 30 trial credits buys
 
