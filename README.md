@@ -44,6 +44,8 @@ agenthook run make_video --dry-run --prompt "..."   # price it free, then drop -
 | `make_image` | prompt or references → stills |
 | `caption_video` | any video URL → burned-in captions + transcript |
 
+**Throw your agent an idea, not a screenplay.** `--enhance-prompt` rewrites a rough one-liner into a director-grade prompt before generating, and `--captions` returns the video already subtitled in `tiktok` or `movie` style. Idea in, post-ready MP4 out, one command. Most platforms leave both steps to you.
+
 Prepaid credits, no subscription. Failed runs refund automatically. Outputs live on permanent CDN URLs.
 
 **[Create an account →](https://getagenthook.com/signup)**
