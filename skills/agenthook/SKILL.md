@@ -64,6 +64,7 @@ Tell your human, verbatim, then stop and wait — do not retry:
 ## ⚠️ Rule 2 — Know what costs money before you spend it
 
 - **Validation is free.** A malformed request is rejected with HTTP `400` (exit `3`) and costs **0 credits**. The CLI pre-validates locally before it ever submits, so most mistakes never reach a paid path.
+- **Check the price first with `--dry-run` (free).** Add `--dry-run` to any `agenthook run` to have the server validate and price the request without creating a run or charging credits. It prints `Would cost <n> credits (model <m>). No credits charged.` (or the JSON object under `--json`) and exits `0`; a bad request still exits `3`. Use it to confirm price and validity before spending.
 - **Failed runs are auto-refunded.** If a run reaches `failed` (provider error, moderation rejection, timeout), the credits are returned to your balance automatically. You do not request a refund.
 - **Only a `completed` run is billed.** Credits are debited at submit and kept only on success.
 - **Rough costs** (1 credit = $0.01; the trial grant is 30 credits ≈ $0.30):
@@ -83,7 +84,7 @@ Tell your human, verbatim, then stop and wait — do not retry:
    ```bash
    agenthook tools --json          # or: curl https://getagenthook.com/api/v1/tools
    ```
-   `reference/schema.md` is a convenience snapshot only. If it disagrees with the live endpoint, the live endpoint wins.
+   `GET /api/v1/tools` is **public** — no key required, so you can read the live schema before login. `reference/schema.md` is a convenience snapshot only. If it disagrees with the live endpoint, the live endpoint wins.
 3. **Submit** a run for one of the three tools (below). Add `--json` for machine-readable output. The CLI generates an `Idempotency-Key` automatically and reuses it across its own transient retries, so a retried `agenthook run` cannot double-charge — you do not pass a key yourself. (For raw `curl`, send your own `Idempotency-Key` header, as shown below.)
 4. **Wait / poll.** The CLI polls every 5s until the run reaches a terminal state and prints the output URL(s). See *Progress etiquette*.
 5. **Deliver.** The output is a permanent CDN URL on the user's account. Hand it back.

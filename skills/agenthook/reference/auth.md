@@ -14,6 +14,8 @@ agenthook balance
 
 Any authenticated command works as a probe; `balance` is the cheapest. Exit `0` = authenticated (prints your credit balance). Exit `2` = no valid credentials → pick a path below.
 
+Schema discovery is the one exception that needs **no** credentials: `agenthook tools` (`GET /api/v1/tools`) is public, so an unauthenticated agent can read the live tool schema before login. Everything that spends — running a tool, checking a balance — still requires a key.
+
 ## Path A — headless / CI (a key already in the environment)
 
 If `AGENTHOOK_API_KEY` is set, every CLI command uses it automatically; you are done. This is the path for CI pipelines, cron jobs, and any environment where a human has pre-provisioned a key as a secret. Do not print it, do not copy it into a config you show the user.
