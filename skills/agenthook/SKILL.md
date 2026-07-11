@@ -71,7 +71,8 @@ Tell your human, verbatim, then stop and wait — do not retry:
   - `make_video` — roughly **90–650 credits** ($0.90–$6.50) depending on model, quality (`standard`/`pro`), and duration. A default 5-second standard video is ~100 credits. `--captions` adds 15.
   - `make_image` — roughly **10–96 credits** ($0.10–$0.96) depending on model, resolution, and `count`. A single default image is ~10–12 credits.
   - `caption_video` — a flat **15 credits** ($0.15).
-  - `--enhance-prompt` adds **3 credits** to any run.
+  - `create_influencer` — a flat **20 credits** ($0.20) for a reusable character (portrait + character sheet). The prompt rewrite is always on and included; there is no `--enhance-prompt` on this tool.
+  - `--enhance-prompt` adds **3 credits** to any run (`make_video` / `make_image`).
 
   30 trial credits covers a handful of images or captions but **not** a full standard video — expect to ask the human to top up (Rule 1C) before the first video. Read `reference/pricing.md` for the exact per-combination table.
 
@@ -85,7 +86,7 @@ Tell your human, verbatim, then stop and wait — do not retry:
    agenthook tools --json          # or: curl https://getagenthook.com/api/v1/tools
    ```
    `GET /api/v1/tools` is **public** — no key required, so you can read the live schema before login. `reference/schema.md` is a convenience snapshot only. If it disagrees with the live endpoint, the live endpoint wins.
-3. **Submit** a run for one of the three tools (below). Add `--json` for machine-readable output. The CLI generates an `Idempotency-Key` automatically and reuses it across its own transient retries, so a retried `agenthook run` cannot double-charge — you do not pass a key yourself. (For raw `curl`, send your own `Idempotency-Key` header, as shown below.)
+3. **Submit** a run for one of the tools (below). Add `--json` for machine-readable output. The CLI generates an `Idempotency-Key` automatically and reuses it across its own transient retries, so a retried `agenthook run` cannot double-charge — you do not pass a key yourself. (For raw `curl`, send your own `Idempotency-Key` header, as shown below.)
 4. **Wait / poll.** The CLI polls every 5s until the run reaches a terminal state and prints the output URL(s). See *Progress etiquette*.
 5. **Deliver.** The output is a permanent CDN URL on the user's account. Hand it back.
 
@@ -93,7 +94,7 @@ Tell your human, verbatim, then stop and wait — do not retry:
 
 ## Tools
 
-Three tools. Each maps to `POST /api/v1/tools/<tool>/run` and, on the CLI, to `agenthook run <tool>`.
+Each maps to `POST /api/v1/tools/<tool>/run` and, on the CLI, to `agenthook run <tool>`.
 
 ### make_video
 
@@ -150,7 +151,55 @@ curl -sX POST https://getagenthook.com/api/v1/tools/caption_video/run \
 
 Key params: `video_url` (required), `style` (`movie` default | `tiktok`), `language` (`auto` default).
 
-**Reference images require consent.** Any tool call that attaches `reference_images` of a person must also set `owns_references: true` (CLI: `--owns-references`) — you attest you own or have rights to those likenesses. Without it the request is rejected `400` (free).
+### create_influencer
+
+Create a **reusable, account-bound character** the user can reference across many later runs. From a rough idea and a name, the server produces a hero portrait + a composite multi-view character sheet and saves them to the account. Flat **20 credits**. The idea prompt is rewritten server-side before generation (always on — there is no `--enhance-prompt` on this tool). `output[0]` is the portrait, `output[1]` the character sheet.
+
+```bash
+agenthook run create_influencer \
+  --prompt "a warm, freckled woman in her late 20s, indie skincare founder energy, natural makeup" \
+  --name Maya --slug maya --json
+```
+
+```bash
+curl -sX POST https://getagenthook.com/api/v1/tools/create_influencer/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" -H "Content-Type: application/json" \
+  -d '{"prompt":"a warm, freckled woman in her late 20s...","name":"Maya","slug":"maya"}'
+```
+
+Params: `prompt` (required — a brief idea, not a screenplay), `name` (required, 1–60 chars), `slug` (optional; lowercase `[a-z0-9-]`, ≤40, derived from the name if omitted, unique per account — a collision returns `409`). `--dry-run` prices it (reports 20) without charging.
+
+**Then reuse it** by passing `--influencer <slug>` to `make_video` or `make_image`. The server attaches the influencer's portrait + character sheet as references and prepends its appearance description to the prompt — write only the action, not the looks:
+
+```bash
+agenthook run make_video --influencer maya \
+  --prompt 'talking to camera in a bright bathroom: "Here is my actual morning routine."'
+agenthook run make_image --influencer maya \
+  --prompt "holding a serum bottle at a sunlit kitchen counter, editorial product shot"
+```
+
+- Identity holds across generations but is **strong, not pixel-perfect** — expect small drift in fine details.
+- **No `--owns-references` for the influencer's own refs** (they are platform-generated). Any *additional* `reference_images` you attach yourself still require `--owns-references`.
+- On `seedance-2` a referenced run carries the standard **+10%** reference surcharge; on `kling-3` the influencer takes 2 of the 4 ref slots, so you can attach **at most 2** of your own refs alongside it.
+- An unknown slug is rejected `400` **before any debit**, naming the slug.
+
+**Manage influencers** (an account can hold up to 100):
+
+```bash
+agenthook influencers                 # list slug, name, portrait URL
+agenthook influencers:delete maya     # remove the saved character
+```
+
+```bash
+curl https://getagenthook.com/api/v1/influencers \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+curl -X DELETE https://getagenthook.com/api/v1/influencers/maya \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+Deleting removes the saved asset (no more `--influencer` by that slug), but media you already generated with it keeps its permanent CDN URLs.
+
+**Reference images require consent.** Any tool call that attaches your own `reference_images` of a person must also set `owns_references: true` (CLI: `--owns-references`) — you attest you own or have rights to those likenesses. Without it the request is rejected `400` (free). This does not apply to an influencer's own portrait/sheet, which the platform generated.
 
 ---
 

@@ -78,9 +78,10 @@ describe("tools", () => {
     expect(out).toContain("make_video");
     expect(out).toContain("make_image");
     expect(out).toContain("caption_video");
+    expect(out).toContain("create_influencer");
     expect(out).toContain("--owns-references");
     const cache = JSON.parse(fs.readFileSync(path.join(h.dir, "tools-cache.json"), "utf8"));
-    expect(cache[API].tools).toHaveLength(3);
+    expect(cache[API].tools).toHaveLength(4);
   });
 });
 
@@ -116,6 +117,91 @@ describe("list", () => {
   });
 });
 
+describe("influencers", () => {
+  const maya = {
+    slug: "maya",
+    name: "Maya",
+    portrait_url: "https://r2.example/maya/portrait.png",
+    sheet_url: "https://r2.example/maya/sheet.png",
+    appearance: "warm-toned indie-pop singer, mid-20s",
+    created_at: "2026-07-11T09:00:00Z",
+    run_id: "inf_1",
+  };
+
+  test("lists roster as slug / name / portrait lines", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async (input: unknown) => {
+      expect(String(input)).toBe(`${V1}/influencers`);
+      return json(200, { influencers: [maya] });
+    });
+    expect(await runCli(["influencers"])).toBe(0);
+    const out = h.logs.join("\n");
+    expect(out).toContain("SLUG");
+    expect(out).toContain("maya");
+    expect(out).toContain("Maya");
+    expect(out).toContain("https://r2.example/maya/portrait.png");
+  });
+
+  test("empty roster says so", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async () => json(200, { influencers: [] }));
+    expect(await runCli(["influencers"])).toBe(0);
+    expect(h.logs.join("\n")).toContain("No influencers yet");
+  });
+
+  test("--json emits the raw list object on stdout", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async () => json(200, { influencers: [maya] }));
+    expect(await runCli(["influencers", "--json"])).toBe(0);
+    expect(JSON.parse(h.logs[0]!)).toEqual({ influencers: [maya] });
+  });
+
+  test("401 → login hint, exit 2 (AUTH)", async () => {
+    seedCredentials(h.dir, "revoked");
+    h.fetchMock.mockImplementation(async () => json(401, { error: "invalid api key" }));
+    expect(await runCli(["influencers"])).toBe(2);
+    expect(h.errs.join("\n")).toContain("agenthook login");
+  });
+
+  test("delete <slug> hits DELETE /v1/influencers/:slug and confirms", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      expect(String(input)).toBe(`${V1}/influencers/maya`);
+      expect(init?.method).toBe("DELETE");
+      return json(200, { deleted: true });
+    });
+    expect(await runCli(["influencers:delete", "maya"])).toBe(0);
+    expect(h.logs.join("\n")).toBe("Deleted maya.");
+  });
+
+  test("delete --json emits {deleted:true}", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async () => json(200, { deleted: true }));
+    expect(await runCli(["influencers:delete", "maya", "--json"])).toBe(0);
+    expect(JSON.parse(h.logs[0]!)).toEqual({ deleted: true });
+  });
+
+  test("delete unknown slug → 404 with a slug-named message, exit 1", async () => {
+    seedCredentials(h.dir);
+    h.fetchMock.mockImplementation(async () => json(404, { error: "not found" }));
+    expect(await runCli(["influencers:delete", "ghost"])).toBe(1);
+    expect(h.errs.join("\n")).toContain('No influencer with slug "ghost".');
+  });
+
+  test("delete 401 → exit 2 (AUTH)", async () => {
+    seedCredentials(h.dir, "revoked");
+    h.fetchMock.mockImplementation(async () => json(401, { error: "invalid api key" }));
+    expect(await runCli(["influencers:delete", "maya"])).toBe(2);
+  });
+
+  test("delete without a slug prints usage, exit 1", async () => {
+    seedCredentials(h.dir);
+    expect(await runCli(["influencers:delete"])).toBe(1);
+    expect(h.errs.join("\n")).toContain("Usage: agenthook influencers:delete <slug>");
+    expect(h.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("balance", () => {
   test("prints balance from /v1/me", async () => {
     seedCredentials(h.dir);
@@ -134,10 +220,10 @@ describe("balance", () => {
     expect(h.errs.join("\n")).toContain("suspended");
   });
 
-  test("401 renders a login hint, exit 1", async () => {
+  test("401 renders a login hint, exit 2 (AUTH)", async () => {
     seedCredentials(h.dir, "revoked");
     h.fetchMock.mockImplementation(async () => json(401, { error: "invalid api key" }));
-    expect(await runCli(["balance"])).toBe(1);
+    expect(await runCli(["balance"])).toBe(2);
     expect(h.errs.join("\n")).toContain("agenthook login");
   });
 });

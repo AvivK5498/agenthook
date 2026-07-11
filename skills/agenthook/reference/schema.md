@@ -25,8 +25,9 @@ Generate a video (talking-head parity via Seedance native audio) from a prompt a
 | `reference_images` | string[] | no | — | up to 14 URLs; requires `owns_references: true` |
 | `owns_references` | boolean | no | — | must be `true` when `reference_images` present (likeness consent) |
 | `enhance_prompt` | boolean | no | `false` | rewrites the prompt (+3 credits) |
+| `influencer` | string | no | — | slug of a saved influencer; server attaches its portrait+sheet as refs and prepends its appearance to the prompt. Seedance adds the +10% ref surcharge; kling caps user refs at 2 alongside it (4 total). Unknown slug → `400`, no debit |
 
-CLI flags: `--prompt`, `--model`, `--quality`, `--duration`, `--aspect-ratio`, `--no-audio`, `--captions`, `--caption-style`, `--ref <url>` (repeatable), `--owns-references`, `--enhance-prompt`.
+CLI flags: `--prompt`, `--model`, `--quality`, `--duration`, `--aspect-ratio`, `--no-audio`, `--captions`, `--caption-style`, `--ref <url>` (repeatable), `--owns-references`, `--enhance-prompt`, `--influencer <slug>`.
 
 ## make_image
 
@@ -42,8 +43,9 @@ Generate or edit an image. With `reference_images` it routes to Nano Banana 2; w
 | `reference_images` | string[] | no | — | up to 14 URLs; requires `owns_references: true` |
 | `owns_references` | boolean | no | — | must be `true` when `reference_images` present |
 | `enhance_prompt` | boolean | no | `false` | +3 credits |
+| `influencer` | string | no | — | slug of a saved influencer; server attaches its portrait+sheet as refs and prepends its appearance to the prompt. Unknown slug → `400`, no debit |
 
-CLI flags: `--prompt`, `--model`, `--aspect-ratio`, `--resolution`, `--count`, `--ref <url>` (repeatable), `--owns-references`, `--enhance-prompt`.
+CLI flags: `--prompt`, `--model`, `--aspect-ratio`, `--resolution`, `--count`, `--ref <url>` (repeatable), `--owns-references`, `--enhance-prompt`, `--influencer <slug>`.
 
 ## caption_video
 
@@ -56,6 +58,27 @@ Burn styled subtitles into an existing video; returns the captioned video plus a
 | `language` | string | no | `auto` | ISO code or `auto` |
 
 CLI flags: `--video-url`, `--style`, `--language`.
+
+## create_influencer
+
+Create a reusable, account-bound character: a hero portrait + a composite multi-view character sheet. Flat 20 credits. The idea prompt is rewritten server-side before generation (always on — no `enhance_prompt` on this tool). On success, `output[0]` is the portrait and `output[1]` the character sheet, both saved to the account.
+
+| param | type | required | default | values / notes |
+|-------|------|----------|---------|----------------|
+| `prompt` | string | yes | — | a rough idea; rewritten server-side into a portrait prompt |
+| `name` | string | yes | — | display name, 1–60 chars |
+| `slug` | string | no | derived from `name` | lowercase `[a-z0-9-]`, ≤40; the handle for `--influencer`; unique per account (collision → `409`) |
+
+CLI flags: `--prompt`, `--name`, `--slug`. Use the saved influencer with `--influencer <slug>` on `make_video` / `make_image`.
+
+### Managing influencers
+
+Not run-based — direct endpoints keyed by the API key (max 100 per account):
+
+| method | endpoint | CLI | notes |
+|--------|----------|-----|-------|
+| GET | `/v1/influencers` | `agenthook influencers` | list slug, name, portrait/sheet URLs, appearance |
+| DELETE | `/v1/influencers/<slug>` | `agenthook influencers:delete <slug>` | removes the saved asset; already-generated media URLs keep working |
 
 ## Run lifecycle
 

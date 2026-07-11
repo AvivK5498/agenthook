@@ -23,7 +23,8 @@
         "pages": [
           "tools/make-video",
           "tools/make-image",
-          "tools/caption-video"
+          "tools/caption-video",
+          "tools/create-influencer"
         ]
       },
       {

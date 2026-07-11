@@ -38,6 +38,9 @@ export const FLAG_FOR: Record<string, string> = {
   count: "--count",
   resolution: "--resolution",
   language: "--language",
+  name: "--name",
+  slug: "--slug",
+  influencer: "--influencer",
 };
 
 /** Map parsed CLI flags onto the tool-input body the API expects. Only flags
@@ -56,6 +59,9 @@ export function buildToolInput(flags: FlagValues): Record<string, unknown> {
     ["count", "count"],
     ["resolution", "resolution"],
     ["language", "language"],
+    ["name", "name"],
+    ["slug", "slug"],
+    ["influencer", "influencer"],
   ];
   for (const [flag, param] of direct) {
     if (flags[flag] !== undefined) input[param] = flags[flag];

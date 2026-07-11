@@ -24,6 +24,7 @@ Generates a video from a text prompt, optionally grounded in reference images. S
 | `captions` | boolean | no | `false` | When `true`, burns styled subtitles into the finished video within the same run, for an extra flat [caption charge](/credits-and-refunds#what-runs-cost). |
 | `caption_style` | string | no | `"tiktok"` | One of `movie`, `tiktok`. Only used when `captions` is `true`. |
 | `enhance_prompt` | boolean | no | `false` | Rewrite a rough prompt into a production-grade one before generation — see [below](#enhance_prompt). |
+| `influencer` | string | no | — | Slug of a saved [influencer](/tools/create-influencer). The server attaches its portrait + character sheet as references and prepends its appearance description to your prompt. On `seedance-2` this adds the standard +10% reference surcharge; on `kling-3` the influencer takes 2 of the 4 reference slots (so at most 2 of your own `reference_images` alongside it). An unknown slug → `400`, no debit. |
 
 ## `owns_references` consent
 

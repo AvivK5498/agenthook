@@ -43,6 +43,7 @@ agenthook run make_video --dry-run --prompt "..."   # price it free, then drop -
 | `make_video` | script + optional reference images → talking-head video, native speech |
 | `make_image` | prompt or references → stills |
 | `caption_video` | any video URL → burned-in captions + transcript |
+| `create_influencer` | brief idea + name → reusable character: portrait + character sheet, usable via `--influencer` on every later run |
 
 **Throw your agent an idea, not a screenplay.** `--enhance-prompt` rewrites a rough one-liner into a director-grade prompt before generating, and `--captions` returns the video already subtitled in `tiktok` or `movie` style. Idea in, post-ready MP4 out, one command. Most platforms leave both steps to you.
 

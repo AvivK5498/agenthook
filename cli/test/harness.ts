@@ -28,6 +28,7 @@ export function setupHarness(): Harness {
   process.env.AGENTHOOK_CONFIG_DIR = dir;
   process.env.AGENTHOOK_POLL_MS = "1";
   delete process.env.AGENTHOOK_API_URL;
+  delete process.env.AGENTHOOK_API_KEY;
 
   const logs: string[] = [];
   const errs: string[] = [];
@@ -58,6 +59,7 @@ export function teardownHarness(h: Harness): void {
   fs.rmSync(h.dir, { recursive: true, force: true });
   delete process.env.AGENTHOOK_CONFIG_DIR;
   delete process.env.AGENTHOOK_POLL_MS;
+  delete process.env.AGENTHOOK_API_KEY;
 }
 
 export function json(status: number, body: unknown): Response {

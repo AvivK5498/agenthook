@@ -1,12 +1,19 @@
+import * as crypto from "node:crypto";
 import { parseArgs, type FlagSpec } from "../args";
-import { resolveApiUrl, storedApiKey } from "../config";
+import { resolveApiKey, resolveApiUrl } from "../config";
+import { EXIT, exitCodeForApiError, type ExitCode } from "../exit";
 import { api, ApiError, describeApiError } from "../http";
+import { appendJob } from "../jobs";
 import { getLocalToolSchemas } from "../schemas";
+import { IDEMPOTENCY_KEY_HEADER } from "../types";
 import { buildToolInput, preValidate } from "../validate";
-import type { RunCreatedResponse, RunResponse } from "../types";
+import type { DryRunResponse, RunCreatedResponse, RunResponse } from "../types";
 
 const RUN_FLAGS: FlagSpec = {
   "api-url": "string",
+  key: "string",
+  json: "boolean",
+  "dry-run": "boolean",
   prompt: "string",
   ref: "array",
   "owns-references": "boolean",
@@ -23,6 +30,9 @@ const RUN_FLAGS: FlagSpec = {
   count: "number",
   resolution: "string",
   language: "string",
+  name: "string",
+  slug: "string",
+  influencer: "string",
 };
 
 // Poll cadence: 5s (spec); overridable for tests. Every watcher gets a
@@ -30,23 +40,27 @@ const RUN_FLAGS: FlagSpec = {
 const pollIntervalMs = () => Number(process.env.AGENTHOOK_POLL_MS || 5000);
 const POLL_DEADLINE_MS = 60 * 60 * 1000; // the server sweep fails stuck runs at 45min; we outlast it
 const MAX_POLL_MISSES = 5;
+// One transient re-submit with the SAME idempotency key (spec AC7 — a retried
+// submit must never double-charge; the server dedupes on the key).
+const SUBMIT_RETRIES = 1;
 
 export async function run(argv: string[]): Promise<number> {
   const { positionals, flags, errors } = parseArgs(argv, RUN_FLAGS);
   if (errors.length) {
     errors.forEach((e) => console.error(e));
-    return 1;
+    return EXIT.GENERIC;
   }
+  const asJson = flags["json"] === true;
   const tool = positionals[0];
   if (!tool) {
     console.error("Usage: agenthook run <tool> [flags] — see `agenthook tools`");
-    return 1;
+    return EXIT.GENERIC;
   }
   const apiUrl = resolveApiUrl(flags["api-url"] as string | undefined);
-  const key = storedApiKey();
+  const key = resolveApiKey(flags["key"] as string | undefined);
   if (!key) {
-    console.error("Not logged in — run `agenthook login` first.");
-    return 1;
+    emitError(asJson, "Not logged in — run `agenthook auth:login` first.", EXIT.AUTH);
+    return EXIT.AUTH;
   }
 
   // Deterministic pre-validation BEFORE any network call (spec §3) — schemas
@@ -57,29 +71,60 @@ export async function run(argv: string[]): Promise<number> {
   const input = buildToolInput(flags);
   const problems = preValidate(tool, input, schemas);
   if (problems.length) {
-    problems.forEach((p) => console.error(p));
-    return 1;
+    if (asJson) emitError(true, problems.join("; "), EXIT.VALIDATION);
+    else problems.forEach((p) => console.error(p));
+    return EXIT.VALIDATION;
   }
 
-  // Submit.
+  // Free pre-flight: POST with `dry_run` so the server prices + validates
+  // authoritatively without creating a run or debiting. No idempotency key
+  // (nothing is charged) and no poll — the priced response is terminal.
+  if (flags["dry-run"] === true) {
+    let dry: DryRunResponse;
+    try {
+      dry = await api<DryRunResponse>(apiUrl, `/tools/${encodeURIComponent(tool)}/run`, {
+        method: "POST",
+        key,
+        body: { ...input, dry_run: true },
+      });
+    } catch (e) {
+      if (e instanceof ApiError) {
+        const code = exitCodeForApiError(e);
+        if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined);
+        else console.error(describeApiError(e));
+        return code;
+      }
+      throw e;
+    }
+    if (asJson) emit(dry);
+    else console.log(`Would cost ${dry.credits_required} credits${dry.model ? ` (model ${dry.model})` : ""}. No credits charged.`);
+    return EXIT.OK;
+  }
+
+  // Idempotency key generated once and reused across transient re-submits, so
+  // a network hiccup mid-submit can retry without a second debit (spec AC5/AC7).
+  const idempotencyKey = crypto.randomUUID();
+
   let created: RunCreatedResponse;
   try {
-    created = await api<RunCreatedResponse>(apiUrl, `/tools/${encodeURIComponent(tool)}/run`, {
-      method: "POST",
-      key,
-      body: input,
-    });
+    created = await submitWithRetry(apiUrl, tool, input, key, idempotencyKey);
   } catch (e) {
     if (e instanceof ApiError) {
-      console.error(describeApiError(e));
-      return 1;
+      const code = exitCodeForApiError(e);
+      if (asJson) emitError(true, e.message, code, e.status === 402 ? topUpUrl(apiUrl) : undefined);
+      else console.error(describeApiError(e));
+      return code;
     }
     throw e;
   }
+
+  // Submit ledger row + submit JSON object (first ndjson line).
+  appendJob({ ts: new Date().toISOString(), run_id: created.run_id, tool, status: "submit", output: [] });
+  if (asJson) emit(created);
   console.error(`Run ${created.run_id} submitted (${created.credits_charged} credits). Polling…`);
 
-  // Poll until terminal. Progress goes to stderr; output URLs alone go to
-  // stdout so agents/scripts can capture them cleanly.
+  // Poll until terminal. In --json mode the terminal RunResponse is the second
+  // ndjson line on stdout; otherwise output URLs alone go to stdout.
   const deadline = Date.now() + POLL_DEADLINE_MS;
   let lastStatus: string = created.status;
   let misses = 0;
@@ -91,16 +136,18 @@ export async function run(argv: string[]): Promise<number> {
       misses = 0;
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) {
-        console.error(`Run ${created.run_id} no longer exists (404).`);
-        return 1;
+        emitError(asJson, `Run ${created.run_id} no longer exists (404).`, EXIT.GENERIC);
+        return EXIT.GENERIC;
       }
       misses++;
       if (misses >= MAX_POLL_MISSES) {
-        console.error(
-          `Lost contact with the API (${MAX_POLL_MISSES} consecutive failures: ${(e as Error).message}).\n` +
+        emitError(
+          asJson,
+          `Lost contact with the API (${MAX_POLL_MISSES} consecutive failures: ${(e as Error).message}). ` +
             `The run may still finish — check later with: agenthook list`,
+          EXIT.GENERIC,
         );
-        return 1;
+        return EXIT.GENERIC;
       }
       continue;
     }
@@ -109,19 +156,63 @@ export async function run(argv: string[]): Promise<number> {
       lastStatus = runRow.status;
     }
     if (runRow.status === "completed") {
-      for (const url of runRow.output) console.log(url);
-      return 0;
+      appendJob({ ts: new Date().toISOString(), run_id: runRow.id, tool, status: "completed", output: runRow.output });
+      if (asJson) emit(runRow);
+      else for (const url of runRow.output) console.log(url);
+      return EXIT.OK;
     }
     if (runRow.status === "failed") {
-      console.error(`Run failed: ${runRow.error ?? "unknown error"} (credits are refunded automatically)`);
-      return 1;
+      appendJob({ ts: new Date().toISOString(), run_id: runRow.id, tool, status: "failed", output: [] });
+      if (asJson) emit(runRow);
+      else console.error(`Run failed: ${runRow.error ?? "unknown error"} (credits are refunded automatically)`);
+      return EXIT.GENERIC;
     }
   }
-  console.error(
+  emitError(
+    asJson,
     `Run ${created.run_id} did not finish within ${POLL_DEADLINE_MS / 60_000} minutes — ` +
       `giving up on polling. Check later with: agenthook list`,
+    EXIT.GENERIC,
   );
-  return 1;
+  return EXIT.GENERIC;
+}
+
+/** Submit, retrying transient network failures with the SAME idempotency key. */
+async function submitWithRetry(
+  apiUrl: string,
+  tool: string,
+  input: Record<string, unknown>,
+  key: string,
+  idempotencyKey: string,
+): Promise<RunCreatedResponse> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await api<RunCreatedResponse>(apiUrl, `/tools/${encodeURIComponent(tool)}/run`, {
+        method: "POST",
+        key,
+        body: input,
+        headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
+      });
+    } catch (e) {
+      // Only retry pure network/timeout failures (status 0); an HTTP error is
+      // deterministic and re-sending won't change it.
+      if (e instanceof ApiError && e.status === 0 && attempt < SUBMIT_RETRIES) continue;
+      throw e;
+    }
+  }
+}
+
+const topUpUrl = (apiUrl: string) => `${apiUrl}/credits`;
+
+/** Machine JSON to stdout (one object per line, ndjson). */
+function emit(obj: unknown): void {
+  console.log(JSON.stringify(obj));
+}
+
+/** Human message to stderr, or a JSON error object to stdout under --json. */
+function emitError(asJson: boolean, message: string, code: ExitCode, top_up_url?: string): void {
+  if (asJson) console.log(JSON.stringify({ error: message, exit_code: code, ...(top_up_url ? { top_up_url } : {}) }));
+  else console.error(message);
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));

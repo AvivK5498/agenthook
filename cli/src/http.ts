@@ -28,6 +28,7 @@ export interface ApiRequestOptions {
   key?: string;
   body?: unknown;
   query?: Record<string, string | undefined>;
+  headers?: Record<string, string>; // extra request headers (e.g. Idempotency-Key)
 }
 
 /** Bounded JSON request against <apiUrl>/api/v1<pathname>. Checks res.ok
@@ -37,7 +38,7 @@ export async function api<T>(apiUrl: string, pathname: string, opts: ApiRequestO
   for (const [k, v] of Object.entries(opts.query ?? {})) {
     if (v !== undefined && v !== "") url.searchParams.set(k, v);
   }
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...opts.headers };
   if (opts.key) headers.authorization = `Bearer ${opts.key}`;
   if (opts.body !== undefined) headers["content-type"] = "application/json";
 

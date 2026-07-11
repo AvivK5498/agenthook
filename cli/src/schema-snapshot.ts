@@ -33,6 +33,11 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
       captions: { type: "boolean", default: false },
       caption_style: { type: "string", enum: ["movie", "tiktok"], default: "tiktok" },
       enhance_prompt: { type: "boolean", default: false },
+      influencer: {
+        type: "string",
+        description:
+          "Slug of a saved influencer — the server attaches its portrait + character sheet as references and prepends its appearance description to the prompt.",
+      },
     },
   },
   {
@@ -55,6 +60,11 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
       resolution: { type: "string", enum: ["1k", "2k", "4k"], default: "1k" },
       count: { type: "number", default: 1, min: 1, max: 4 },
       enhance_prompt: { type: "boolean", default: false },
+      influencer: {
+        type: "string",
+        description:
+          "Slug of a saved influencer — the server attaches its portrait + character sheet as references and prepends its appearance description to the prompt.",
+      },
     },
   },
   {
@@ -64,6 +74,16 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
       video_url: { type: "string", required: true },
       style: { type: "string", enum: ["movie", "tiktok"], default: "movie" },
       language: { type: "string", default: "auto" },
+    },
+  },
+  {
+    name: "create_influencer",
+    description:
+      "Create a reusable, account-bound influencer: a hero portrait + a multi-view character sheet. Flat 20 credits. The prompt is auto-rewritten server-side (always-on).",
+    params: {
+      prompt: { type: "string", required: true },
+      name: { type: "string", required: true, min: 1, maxLength: 60 },
+      slug: { type: "string", maxLength: 40 },
     },
   },
 ];

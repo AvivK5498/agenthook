@@ -36,6 +36,14 @@ export interface RunCreatedResponse {
   credits_charged: number;
 }
 
+/** POST /v1/tools/:tool/run with `dry_run: true` → 200 (no run created, no debit) */
+export interface DryRunResponse {
+  dry_run: true;
+  valid: true;
+  model: string;
+  credits_required: number;
+}
+
 /** GET /v1/runs/:id */
 export interface RunResponse {
   id: string;
@@ -62,6 +70,22 @@ export interface GenerationsResponse {
   next_cursor: string | null;
 }
 
+/** A saved influencer as returned by the influencers endpoints. */
+export interface InfluencerResponse {
+  slug: string;
+  name: string;
+  portrait_url: string;
+  sheet_url: string;
+  appearance: string;
+  created_at: string;
+  run_id: string | null;
+}
+
+/** GET /v1/influencers → the account's roster (cap 100). */
+export interface InfluencersListResponse {
+  influencers: InfluencerResponse[];
+}
+
 /** GET /v1/me */
 export interface MeResponse {
   user_id: string;
@@ -83,6 +107,27 @@ export interface CreditsHistoryResponse {
   balance: number;
   next_cursor: string | null;
 }
+
+// ── device auth flow (mirrors contract.ts §device — frozen shapes) ──
+
+/** POST /api/v1/device → 201 */
+export interface DeviceSessionCreateResponse {
+  device_url: string;
+  user_code: string;
+  poll_token: string;
+  expires_in: number; // seconds until the code expires (≤ 900)
+}
+
+/** GET /api/v1/device/:pollToken → 200, discriminated by `status`. */
+export type DevicePollResponse =
+  | { status: "pending" }
+  | { status: "approved"; api_key: string; email: string }
+  | { status: "expired" }
+  | { status: "claimed" };
+
+/** Header carrying the client-generated idempotency key on run creation
+ * (mirrors contract.ts IDEMPOTENCY_KEY_HEADER; parity.test.ts pins it). */
+export const IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
 
 /** Uniform error body. */
 export interface ErrorBody {

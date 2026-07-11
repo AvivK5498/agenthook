@@ -1,0 +1,101 @@
+---
+title: "create_influencer"
+description: "Create a reusable, account-bound character — a hero portrait plus a multi-view character sheet — usable on every later run with --influencer."
+---
+
+```
+POST /api/v1/tools/create_influencer/run
+```
+
+Turns a rough idea (`"a warm, freckled woman in her late 20s, indie-brand founder energy"`) plus a name into a **reusable character bound to your account**: a hero portrait and a composite multi-view character sheet. Save it once, then reference it by slug on every later `make_video` and `make_image` — the server attaches the portrait and sheet as references and prepends the stored appearance description, so the same person carries across generations.
+
+The idea prompt is **rewritten server-side before generation** into a director-grade portrait prompt — there is no `enhance_prompt` flag on this tool, the rewrite is always on and included in the flat price.
+
+## Arguments
+
+| Argument | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | string | yes | — | A rough idea of the character. It is auto-rewritten server-side into a full portrait prompt before generation — write a brief, not a screenplay. |
+| `name` | string | yes | — | Display name, 1–60 chars (e.g. `Maya`). |
+| `slug` | string | no | derived from `name` | The reference handle you pass later as `--influencer <slug>`. Lowercase `[a-z0-9-]`, up to 40 chars. Omit it to derive one from the name. Must be unique within your account — a collision returns `409`. |
+
+## Create one
+
+```bash
+agenthook run create_influencer \
+  --prompt "a warm, freckled woman in her late 20s, indie skincare founder energy, natural makeup" \
+  --name Maya --slug maya
+```
+
+Or over the API:
+
+```bash
+curl -X POST https://getagenthook.com/api/v1/tools/create_influencer/run \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "a warm, freckled woman in her late 20s, indie skincare founder energy, natural makeup",
+    "name": "Maya",
+    "slug": "maya"
+  }'
+```
+
+Flat **20 credits** — see [pricing](/credits-and-refunds#what-runs-cost). Use `--dry-run` (or `"dry_run": true`) to confirm the price for free first; it reports 20.
+
+## Response
+
+`202` with the queued run; poll `GET /api/v1/runs/{run_id}` as with any tool. On `completed`, `output` holds **two durable URLs**:
+
+- `output[0]` — the hero portrait.
+- `output[1]` — the composite multi-view character sheet (full-body and close-up views on a neutral background).
+
+Both are saved to your account as the influencer's references. On `failed`, the 20 credits are [refunded instantly](/credits-and-refunds#instant-refunds-on-failure).
+
+## Use an influencer
+
+Pass `--influencer <slug>` (API: `"influencer": "<slug>"`) to `make_video` or `make_image`. The server attaches the influencer's portrait and character sheet as references and prepends its appearance description to your prompt — you write only the action, not the looks.
+
+```bash
+agenthook run make_video \
+  --influencer maya \
+  --prompt 'talking to camera in a bright bathroom: "Okay, here is my actual morning routine."'
+```
+
+```bash
+agenthook run make_image \
+  --influencer maya \
+  --prompt "holding a serum bottle at a sunlit kitchen counter, editorial product shot"
+```
+
+A few things to know:
+
+- **Consistency is strong, not pixel-perfect.** Reference-conditioned identity holds the character across generations well, but expect small drift in fine details from run to run.
+- **No `owns_references` needed for the influencer's own refs** — they are platform-generated, so the ownership attestation does not apply to them. If you *also* attach your own `reference_images` in the same run, those still require `owns_references: true`.
+- **Reference surcharge on Seedance.** A referenced `seedance-2` run carries the standard **+10%** reference surcharge (the provider charges it).
+- **Kling reference cap.** On `kling-3`, an influencer occupies 2 of the model's 4 reference slots, so you can attach **at most 2** of your own `reference_images` alongside it. Over that returns a `400`.
+- **Unknown slug → `400` before any charge.** If the slug does not exist on your account, the run is rejected with a message naming the slug, and nothing is debited.
+
+## Manage your influencers
+
+List and delete over the CLI:
+
+```bash
+agenthook influencers                 # list slug, name, portrait URL
+agenthook influencers:delete maya     # remove the influencer
+```
+
+Or over the API, with your API key:
+
+```bash
+curl https://getagenthook.com/api/v1/influencers \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+
+curl -X DELETE https://getagenthook.com/api/v1/influencers/maya \
+  -H "Authorization: Bearer $AGENTHOOK_API_KEY"
+```
+
+An account can hold up to **100** influencers. Deleting one removes the saved asset (you can no longer reference it by slug), but any media you already generated with it keeps its permanent CDN URLs — deletion does not touch your gallery history.
+
+## Pricing
+
+Flat **20 credits** ($0.20) per influencer, regardless of the prompt — the always-on prompt rewrite, the portrait, and the character sheet are all included. See [Credits & refunds](/credits-and-refunds#what-runs-cost).

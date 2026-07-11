@@ -50,6 +50,10 @@ Add-ons: `--captions` adds **15 credits** ($0.15); `--enhance-prompt` adds **3 c
 
 Flat **15 credits** ($0.15) per video, regardless of length.
 
+### create_influencer
+
+Flat **20 credits** ($0.20) per influencer, regardless of the prompt. The always-on prompt rewrite, the hero portrait, and the multi-view character sheet are all included — deliberately priced so a trial account can create a character and still generate images of it. `--dry-run` reports 20. Reusing an influencer via `--influencer` on `make_video` / `make_image` is priced as the underlying run (a `seedance-2` referenced run carries the standard +10% reference surcharge).
+
 ## What 30 trial credits buys
 
-The trial grant (~$0.30) covers **a couple of images or one captioned clip** — it is **not** enough for a full standard video (~100 credits). Expect to invite the human to top up (`https://getagenthook.com/credits`) before the first video generation. When a run would exceed the balance the API returns `402` / `insufficient_credits` (CLI exit 4) **before** debiting — nothing is charged.
+The trial grant (~$0.30) covers **a couple of images, one captioned clip, or one influencer** (`create_influencer` is 20 credits, leaving 10 to generate an image of it) — but it is **not** enough for a full standard video (~100 credits). Expect to invite the human to top up (`https://getagenthook.com/credits`) before the first video generation. When a run would exceed the balance the API returns `402` / `insufficient_credits` (CLI exit 4) **before** debiting — nothing is charged.

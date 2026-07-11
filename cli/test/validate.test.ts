@@ -110,6 +110,19 @@ describe("preValidate", () => {
     expect(ok("caption_video", {}).join("\n")).toContain("caption_video requires --video-url");
   });
 
+  test("create_influencer requires --name and --prompt", () => {
+    expect(ok("create_influencer", { prompt: "an indie singer" }).join("\n")).toContain(
+      "create_influencer requires --name",
+    );
+    expect(ok("create_influencer", { name: "Maya" }).join("\n")).toContain(
+      "create_influencer requires --prompt",
+    );
+    expect(ok("create_influencer", { prompt: "an indie singer", name: "Maya" })).toEqual([]);
+    // Optional slug is accepted; its [a-z0-9-] regex is not expressible in the
+    // JSON-schema ToolParamSpec (maxLength only) — the server 400s a bad slug.
+    expect(ok("create_influencer", { prompt: "x", name: "Maya", slug: "maya" })).toEqual([]);
+  });
+
   test("param not belonging to the tool is rejected", () => {
     const errs = ok("make_image", { prompt: "x", video_url: "https://a/v.mp4" });
     expect(errs.join("\n")).toContain("--video-url does not apply to make_image");

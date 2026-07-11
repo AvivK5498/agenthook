@@ -7,13 +7,14 @@ AgentHook is a hosted media-generation API built for AI agents. Claude Code, Cur
 
 There is no timeline editor and no render farm to babysit. Your agent describes what it wants, the API returns a durable URL to the finished media.
 
-## The three tools
+## The tools
 
 | Tool | What it does |
 | --- | --- |
 | [`make_video`](/tools/make-video) | Prompt (+ optional reference images) → video with native audio. A person described in the prompt speaks the lines you write. Optionally chains captioning onto the result. |
 | [`make_image`](/tools/make-image) | Prompt (+ optional reference images) → images. With references it edits/composes from them; without, it generates from text. |
 | [`caption_video`](/tools/caption-video) | Existing video URL → the same video with styled, burned-in subtitles (`movie` or `tiktok` preset). |
+| [`create_influencer`](/tools/create-influencer) | Rough idea + name → a reusable, account-bound character (portrait + character sheet). Reference it by slug via `--influencer` on every later `make_video` and `make_image` to keep the same person across generations. |
 
 ## How every run works
 

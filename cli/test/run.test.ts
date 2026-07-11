@@ -24,7 +24,7 @@ afterEach(() => teardownHarness(h));
 describe("run — deterministic pre-validation (no network)", () => {
   test("refs without --owns-references block locally with consent text; fetch never called", async () => {
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--ref", "https://a/1.jpg"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
     const err = h.errs.join("\n");
     expect(err).toContain("--owns-references");
@@ -33,28 +33,28 @@ describe("run — deterministic pre-validation (no network)", () => {
 
   test("prompt over the forced model's cap blocks locally", async () => {
     const code = await runCli(["run", "make_video", "--model", "kling-3", "--prompt", "x".repeat(3000)]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
     expect(h.errs.join("\n")).toContain("2500");
   });
 
   test("invalid enum blocks locally", async () => {
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--quality", "ultra"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
     expect(h.errs.join("\n")).toContain("standard, pro");
   });
 
   test("--model nano-banana-2 without refs blocks locally", async () => {
     const code = await runCli(["run", "make_image", "--prompt", "hi", "--model", "nano-banana-2"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
     expect(h.errs.join("\n")).toContain("edit model");
   });
 
   test("unknown tool blocks locally", async () => {
     const code = await runCli(["run", "make_ugc", "--prompt", "hi"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
     expect(h.errs.join("\n")).toContain('Unknown tool "make_ugc"');
   });
@@ -62,9 +62,68 @@ describe("run — deterministic pre-validation (no network)", () => {
   test("not logged in → clear message, no network", async () => {
     seedCredentials(h.dir, ""); // empty key
     const code = await runCli(["run", "make_video", "--prompt", "hi"]);
-    expect(code).toBe(1);
+    expect(code).toBe(2); // AUTH
     expect(h.fetchMock).not.toHaveBeenCalled();
     expect(h.errs.join("\n")).toContain("login");
+  });
+
+  test("create_influencer without --name fails fast, exit 3, zero network", async () => {
+    const code = await runCli(["run", "create_influencer", "--prompt", "an indie singer named Maya"]);
+    expect(code).toBe(3); // VALIDATION
+    expect(h.fetchMock).not.toHaveBeenCalled();
+    expect(h.errs.join("\n")).toContain("create_influencer requires --name");
+  });
+
+  test("create_influencer with --name + --prompt submits (flags map to params)", async () => {
+    h.fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${V1}/tools/create_influencer/run` && init?.method === "POST") {
+        return json(202, { run_id: "inf_1", status: "queued", credits_charged: 20 });
+      }
+      if (url === `${V1}/runs/inf_1`) {
+        return json(200, runRow({
+          id: "inf_1",
+          tool: "create_influencer",
+          status: "completed",
+          output: ["https://r2.example/portrait.png", "https://r2.example/sheet.png"],
+        }));
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    const code = await runCli([
+      "run", "create_influencer", "--prompt", "an indie-pop singer", "--name", "Maya", "--slug", "maya",
+    ]);
+    expect(code).toBe(0);
+    const post = h.fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === "POST")!;
+    expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({
+      prompt: "an indie-pop singer",
+      name: "Maya",
+      slug: "maya",
+    });
+    expect(h.logs).toEqual([
+      "https://r2.example/portrait.png",
+      "https://r2.example/sheet.png",
+    ]);
+  });
+
+  test("--influencer maps onto make_video params", async () => {
+    h.fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${V1}/tools/make_video/run` && init?.method === "POST") {
+        return json(202, { run_id: "run_i", status: "queued", credits_charged: 25 });
+      }
+      if (url === `${V1}/runs/run_i`) {
+        return json(200, runRow({ id: "run_i", status: "completed", output: ["https://r2.example/v.mp4"] }));
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    const code = await runCli(["run", "make_video", "--prompt", "talking about the launch", "--influencer", "maya"]);
+    expect(code).toBe(0);
+    const post = h.fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === "POST")!;
+    expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({
+      prompt: "talking about the launch",
+      influencer: "maya",
+    });
   });
 });
 
@@ -82,7 +141,7 @@ describe("run — cold cache (fresh install, no tools-cache.json): bundled snaps
 
   test("refs without --owns-references block locally with the consent sentence; zero fetch", async () => {
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--ref", "https://a/1.jpg"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(cold.fetchMock).not.toHaveBeenCalled();
     const err = cold.errs.join("\n");
     expect(err).toContain("--owns-references");
@@ -91,21 +150,21 @@ describe("run — cold cache (fresh install, no tools-cache.json): bundled snaps
 
   test("invalid enum blocks locally; zero fetch", async () => {
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--quality", "ultra"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(cold.fetchMock).not.toHaveBeenCalled();
     expect(cold.errs.join("\n")).toContain("standard, pro");
   });
 
   test("unknown tool blocks locally; zero fetch", async () => {
     const code = await runCli(["run", "make_ugc", "--prompt", "hi"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(cold.fetchMock).not.toHaveBeenCalled();
     expect(cold.errs.join("\n")).toContain('Unknown tool "make_ugc"');
   });
 
   test("prompt over the model cap blocks locally via the snapshot; zero fetch", async () => {
     const code = await runCli(["run", "make_video", "--model", "kling-3", "--prompt", "x".repeat(3000)]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(cold.fetchMock).not.toHaveBeenCalled();
     expect(cold.errs.join("\n")).toContain("2500");
   });
@@ -193,7 +252,7 @@ describe("run — submit + poll", () => {
       json(402, { error: "insufficient credits", code: "insufficient_credits" }),
     );
     const code = await runCli(["run", "make_video", "--prompt", "hi"]);
-    expect(code).toBe(1);
+    expect(code).toBe(4); // INSUFFICIENT_CREDITS
     expect(h.errs.join("\n")).toContain("insufficient credits");
     expect(h.errs.join("\n")).toContain("balance");
   });
@@ -226,7 +285,58 @@ describe("run — submit + poll", () => {
       }),
     );
     const code = await runCli(["run", "make_video", "--prompt", "hi", "--quality", "ultra"]);
-    expect(code).toBe(1);
+    expect(code).toBe(3); // VALIDATION
     expect(h.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("run — --dry-run (free pre-flight)", () => {
+  const dryBody = { dry_run: true, valid: true, model: "seedance-2", credits_required: 25 };
+
+  test("sends dry_run:true, prints the price line, never polls, exit 0", async () => {
+    h.fetchMock.mockImplementation(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${V1}/tools/make_video/run` && init?.method === "POST") return json(200, dryBody);
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run"]);
+    expect(code).toBe(0);
+    // exactly one network call — the dry-run POST, no /runs/:id poll
+    expect(h.urls()).toEqual([`${V1}/tools/make_video/run`]);
+    const post = h.fetchMock.mock.calls[0]!;
+    expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({ prompt: "hi", dry_run: true });
+    expect(h.logs).toEqual(["Would cost 25 credits (model seedance-2). No credits charged."]);
+  });
+
+  test("--json emits the raw dry-run object on stdout, exit 0", async () => {
+    h.fetchMock.mockImplementation(async () => json(200, dryBody));
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run", "--json"]);
+    expect(code).toBe(0);
+    expect(JSON.parse(h.logs[0]!)).toEqual(dryBody);
+  });
+
+  test("local validation error still short-circuits with exit 3, zero network", async () => {
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--quality", "ultra", "--dry-run"]);
+    expect(code).toBe(3); // VALIDATION — pre-flight never reaches the network
+    expect(h.fetchMock).not.toHaveBeenCalled();
+    expect(h.errs.join("\n")).toContain("standard, pro");
+  });
+
+  test("server 400 on a dry-run keeps exit 3", async () => {
+    h.fetchMock.mockImplementation(async () =>
+      json(400, { error: "bad request", code: "validation", details: [{ path: "duration", message: "too long" }] }),
+    );
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run"]);
+    expect(code).toBe(3); // VALIDATION
+    expect(h.errs.join("\n")).toContain("bad request");
+  });
+
+  test("server 402 on a dry-run surfaces credits exit + top-up url under --json", async () => {
+    h.fetchMock.mockImplementation(async () =>
+      json(402, { error: "insufficient credits", code: "insufficient_credits" }),
+    );
+    const code = await runCli(["run", "make_video", "--prompt", "hi", "--dry-run", "--json"]);
+    expect(code).toBe(4); // INSUFFICIENT_CREDITS
+    expect(JSON.parse(h.logs[0]!)).toMatchObject({ exit_code: 4, top_up_url: `${API}/credits` });
   });
 });

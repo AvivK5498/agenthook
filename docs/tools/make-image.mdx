@@ -30,6 +30,7 @@ You can pin `model` explicitly, with one hard rule: **`nano-banana-2` requires a
 | `resolution` | string | no | `"1k"` | One of `1k`, `2k`, `4k`. Higher resolutions cost more — see [pricing](/credits-and-refunds#what-runs-cost). |
 | `count` | number | no | `1` | Number of images to generate, 1–4. Cost is per image. |
 | `enhance_prompt` | boolean | no | `false` | Rewrite a rough prompt via a prompt-writing model before generation (+3 credits); both prompts are stored and searchable. Same semantics as [`make_video`](/tools/make-video#enhance_prompt). |
+| `influencer` | string | no | — | Slug of a saved [influencer](/tools/create-influencer). The server attaches its portrait + character sheet as references and prepends its appearance description to your prompt, keeping the same character across generations. An unknown slug → `400`, no debit. |
 
 ## Example — text-to-image
 
