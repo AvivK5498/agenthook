@@ -24,7 +24,7 @@ Install the agenthook skill by running: npx skills add AvivK5498/agenthook --yes
 Then follow the skill to set up AgentHook and make me a test image.
 ```
 
-Your agent installs the [skill](./skills/agenthook/SKILL.md), sends you a link to approve (new accounts get 30 trial credits), and comes back with an image URL. Nothing else to configure — and enough trial credits are left for a reusable influencer too.
+Your agent installs the [skill](./skills/ai-influencer-ugc-video/SKILL.md), sends you a link to approve (new accounts get 30 trial credits), and comes back with an image URL. Nothing else to configure — and enough trial credits are left for a reusable influencer too.
 
 ## Agents: start here
 

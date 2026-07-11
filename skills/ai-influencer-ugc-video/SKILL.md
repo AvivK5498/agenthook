@@ -1,9 +1,9 @@
 ---
-name: agenthook
-description: Create video, images, and captions for an AI agent. make_video produces talking-head / UGC video where the person actually speaks your script (native speech); make_image generates or edits stills; caption_video burns styled subtitles into a video. Hosted API, prepaid credits, one CLI. Use when an agent needs to create a video, generate an image, or add captions to a video.
+name: ai-influencer-ugc-video
+description: Character-consistent AI influencer and UGC video toolkit. Create a reusable virtual spokesperson once (a portrait + multi-view character sheet), then reuse the SAME face across talking-head videos where the person actually speaks your script (native speech + lip-sync), image sets, and captioned clips. Faceless UGC ads, AI avatars, consistent characters, product spokespeople, TikTok / Reels / Shorts. Use when an agent needs to create an AI influencer or avatar, make a UGC or talking-head video, keep a character consistent across generations, generate images, or add captions to a video.
 ---
 
-# AgentHook — media generation for agents
+# AI influencer + UGC video — media generation for agents
 
 You produce finished, social-ready **video, images, and captions** by shelling out to the `agenthook` CLI (or calling the HTTP API directly). Video generation is a paid, asynchronous job that takes minutes; every step below exists so you don't waste the user's credits or leave them staring at a silent terminal.
 
