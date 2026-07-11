@@ -95,6 +95,13 @@ Tell your human, verbatim, then stop and wait — do not retry:
 
 ---
 
+## How to prompt (read this before writing any prompt)
+
+- **Default to `--enhance-prompt` and keep your prompt SHORT.** The server-side rewrite (+3 credits) knows each model's grammar — Seedance's camera/audio conventions, GPT Image 2's editorial style — better than a generic hand-written prompt. Pass the *intent* ("Maya at a Bangkok night market, street-style look") and let the rewrite produce the shot description. Only skip it when your human supplied an exact script or shot list they want verbatim. Do not bolt on prompt-engineering boilerplate ("photorealistic, no text, no logos") — the rewrite handles that.
+- **`--count N` is N variations of ONE prompt, not N different subjects.** For a set of distinct looks/scenes (a lookbook, a series), submit one run per look, each with its own short prompt. Listing several outfits or scenes inside a single prompt produces collage/grid images — one scene, one outfit, one location per prompt.
+
+---
+
 ## Tools
 
 Each maps to `POST /api/v1/tools/<tool>/run` and, on the CLI, to `agenthook run <tool>`.
@@ -182,6 +189,7 @@ agenthook run make_image --influencer maya \
 ```
 
 - Identity holds across generations but is **strong, not pixel-perfect** — expect small drift in fine details.
+- **One look per run.** The influencer's character sheet is itself a multi-panel reference, so a prompt that lists several outfits/scenes strongly tends toward collage output. For a lookbook or series, submit one short prompt per look (ideally with `--enhance-prompt`), not one multi-outfit prompt with `--count`.
 - **No `--owns-references` for the influencer's own refs** (they are platform-generated). Any *additional* `reference_images` you attach yourself still require `--owns-references`.
 - On `seedance-2` a referenced run carries the standard **+10%** reference surcharge; on `kling-3` the influencer takes 2 of the 4 ref slots, so you can attach **at most 2** of your own refs alongside it.
 - An unknown slug is rejected `400` **before any debit**, naming the slug.
