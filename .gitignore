@@ -1,0 +1,14 @@
+# Secrets — service-account keys, tokens (see SETUP.md)
+.secrets/
+.env
+.env.*
+!.env.example
+
+# Node / Python
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
