@@ -1,5 +1,5 @@
 ---
-name: ai-influencer-ugc-video
+name: agenthook-ai-influencer-ugc-video
 description: Character-consistent AI influencer and UGC video toolkit. Create a reusable virtual spokesperson once (a portrait + multi-view character sheet), then reuse the SAME face across talking-head videos where the person actually speaks your script (native speech + lip-sync), image sets, and captioned clips. Faceless UGC ads, AI avatars, consistent characters, product spokespeople, TikTok / Reels / Shorts. Use when an agent needs to create an AI influencer or avatar, make a UGC or talking-head video, keep a character consistent across generations, generate images, or add captions to a video.
 ---
 
