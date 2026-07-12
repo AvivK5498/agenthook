@@ -1,0 +1,40 @@
+{
+  "name": "agenthook",
+  "owner": {
+    "name": "Aviv Kaplan"
+  },
+  "description": "Character-consistent UGC video for AI agents. Create one AI influencer, reuse that same face in every video, image, and caption.",
+  "plugins": [
+    {
+      "name": "agenthook",
+      "source": "./",
+      "description": "Make character-consistent UGC video from your agent. Create a reusable AI influencer once, then ask for that same face by name in every make_video and make_image run. Bundles the AgentHook skill and the MCP server.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Aviv Kaplan"
+      },
+      "homepage": "https://getagenthook.com",
+      "repository": "https://github.com/AvivK5498/agenthook",
+      "license": "Apache-2.0",
+      "keywords": [
+        "ugc",
+        "ai-influencer",
+        "ai-video",
+        "character-consistency",
+        "mcp",
+        "faceless-content"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "mcpServers": {
+        "agenthook": {
+          "command": "npx",
+          "args": ["-y", "@getagenthook/mcp"],
+          "env": {
+            "AGENTHOOK_API_KEY": "${AGENTHOOK_API_KEY}"
+          }
+        }
+      }
+    }
+  ]
+}
