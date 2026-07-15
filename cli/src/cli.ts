@@ -31,8 +31,10 @@ Commands:
 Run flags:
   --prompt <text>  --ref <url> (repeatable)  --owns-references  --model <m>
   --quality <standard|pro>  --duration <s>  --aspect-ratio <r>  --no-audio
-  --captions  --caption-style <movie|tiktok>  --enhance-prompt
-  --video-url <url>  --style <movie|tiktok>  --count <n>  --resolution <1k|2k|4k>
+  --captions  --caption-style <chunk|highlight|subtitle>  --caption-size <small|medium|large>
+  --caption-placement <top|center|bottom>  --enhance-prompt
+  --video-url <url>  --style <chunk|highlight|subtitle>  --size <small|medium|large>
+  --placement <top|center|bottom>  --count <n>  --resolution <1k|2k|4k>
   --dry-run        price + validate against the server without spending credits
 
 Auth: pass --key, set AGENTHOOK_API_KEY, or run auth:login (precedence: flag > env > file).

@@ -11,10 +11,11 @@ import {
 } from "../../core/contract";
 import { MODELS } from "../../core/models";
 import { DEFAULT_TIMEOUT_MS as CORE_TIMEOUT } from "../../core/net";
+import { deriveRunFlags } from "../src/flags";
 import { DEFAULT_TIMEOUT_MS } from "../src/http";
 import { TOOLS_SNAPSHOT } from "../src/schema-snapshot";
 import { IDEMPOTENCY_KEY_HEADER } from "../src/types";
-import { FLAG_FOR, preValidate, PROMPT_CAPS } from "../src/validate";
+import { preValidate, PROMPT_CAPS } from "../src/validate";
 
 describe("CLI ↔ core parity", () => {
   test("PROMPT_CAPS mirrors core MODELS promptMax", () => {
@@ -36,16 +37,28 @@ describe("CLI ↔ core parity", () => {
     expect(TOOLS_SNAPSHOT).toEqual(TOOLS_JSON_SCHEMA);
   });
 
-  test("every tool and every served param is drivable from the CLI", () => {
+  test("the derivation drives every tool and every served param (no hardcoded allowlist)", () => {
     expect(TOOLS_JSON_SCHEMA.map((t) => t.name)).toEqual([...TOOLS]);
+    const { spec, paramForFlag, flagFor } = deriveRunFlags(TOOLS_JSON_SCHEMA);
     for (const tool of TOOLS_JSON_SCHEMA) {
       for (const param of Object.keys(tool.params)) {
-        expect(FLAG_FOR[param], `flag for ${tool.name}.${param}`).toBeDefined();
+        const cliFlag = flagFor[param];
+        expect(cliFlag, `flag for ${tool.name}.${param}`).toBeDefined();
+        const bare = cliFlag!.slice(2); // strip the leading "--"
+        expect(spec[bare], `spec entry for ${cliFlag}`).toBeDefined();
+        expect(paramForFlag[bare]?.param, `${cliFlag} → ${param}`).toBe(param);
       }
     }
+    // the two intentional aliases resolve (everything else is mechanical)
+    expect(flagFor["reference_images"]).toBe("--ref");
+    expect(flagFor["audio"]).toBe("--no-audio");
+    expect(paramForFlag["ref"]?.param).toBe("reference_images");
+    expect(paramForFlag["ref"]?.invert).toBeFalsy();
+    expect(paramForFlag["no-audio"]).toEqual({ param: "audio", invert: true });
   });
 
   test("preValidate agrees with core validateToolInput on accept/reject", () => {
+    const { flagFor } = deriveRunFlags(TOOLS_JSON_SCHEMA);
     const cases: [ToolName, Record<string, unknown>][] = [
       ["make_video", { prompt: "hello" }],
       ["make_video", { prompt: "hello", reference_images: ["https://a/1.jpg"] }], // consent missing
@@ -63,7 +76,7 @@ describe("CLI ↔ core parity", () => {
       ["create_influencer", { prompt: "no name given" }], // missing name
     ];
     for (const [tool, input] of cases) {
-      const cli = preValidate(tool, input, TOOLS_JSON_SCHEMA).length === 0;
+      const cli = preValidate(tool, input, TOOLS_JSON_SCHEMA, flagFor).length === 0;
       const core = validateToolInput(tool, input).ok;
       expect(cli, `${tool} ${JSON.stringify(input)}`).toBe(core);
     }

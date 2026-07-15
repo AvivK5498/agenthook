@@ -1,5 +1,6 @@
 import { BASE_PATH } from "./config";
 import type { ErrorBody } from "./types";
+import { VERSION } from "./version";
 
 // Timeout policy mirrors the frozen packages/core/net.ts (DEFAULT_TIMEOUT_MS +
 // AbortSignal.timeout). Duplicated here because the published CLI cannot
@@ -38,7 +39,7 @@ export async function api<T>(apiUrl: string, pathname: string, opts: ApiRequestO
   for (const [k, v] of Object.entries(opts.query ?? {})) {
     if (v !== undefined && v !== "") url.searchParams.set(k, v);
   }
-  const headers: Record<string, string> = { ...opts.headers };
+  const headers: Record<string, string> = { "user-agent": `agenthook-cli/${VERSION}`, ...opts.headers };
   if (opts.key) headers.authorization = `Bearer ${opts.key}`;
   if (opts.body !== undefined) headers["content-type"] = "application/json";
 

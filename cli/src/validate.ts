@@ -19,70 +19,33 @@ export const OWNS_REFERENCES_CONSENT =
   "By passing --owns-references you attest that you own, or have the rights to use, " +
   "the likeness of every person appearing in the referenced images.";
 
-/** CLI flag spelling for each API param — for readable error messages.
- * test/parity.test.ts asserts every param served by /v1/tools has an entry. */
-export const FLAG_FOR: Record<string, string> = {
-  prompt: "--prompt",
-  reference_images: "--ref",
-  owns_references: "--owns-references",
-  model: "--model",
-  quality: "--quality",
-  duration: "--duration",
-  aspect_ratio: "--aspect-ratio",
-  audio: "--no-audio",
-  captions: "--captions",
-  caption_style: "--caption-style",
-  enhance_prompt: "--enhance-prompt",
-  video_url: "--video-url",
-  style: "--style",
-  count: "--count",
-  resolution: "--resolution",
-  language: "--language",
-  name: "--name",
-  slug: "--slug",
-  influencer: "--influencer",
-};
-
-/** Map parsed CLI flags onto the tool-input body the API expects. Only flags
- * the user actually passed are included, so server defaults stay in charge. */
-export function buildToolInput(flags: FlagValues): Record<string, unknown> {
+/** Map parsed CLI flags onto the tool-input body the API expects, using the
+ * flag→param map derived from the tool schema (see flags.ts). Only flags the
+ * user actually passed are present in `flags`, so server defaults stay in
+ * charge; a global CLI flag (api-url/key/json/dry-run) has no param and is
+ * skipped. The one non-direct case is `--no-audio` inverting to audio:false. */
+export function buildToolInput(
+  flags: FlagValues,
+  paramForFlag: Record<string, { param: string; invert?: boolean }>,
+): Record<string, unknown> {
   const input: Record<string, unknown> = {};
-  const direct: [flag: string, param: string][] = [
-    ["prompt", "prompt"],
-    ["model", "model"],
-    ["quality", "quality"],
-    ["duration", "duration"],
-    ["aspect-ratio", "aspect_ratio"],
-    ["caption-style", "caption_style"],
-    ["video-url", "video_url"],
-    ["style", "style"],
-    ["count", "count"],
-    ["resolution", "resolution"],
-    ["language", "language"],
-    ["name", "name"],
-    ["slug", "slug"],
-    ["influencer", "influencer"],
-  ];
-  for (const [flag, param] of direct) {
-    if (flags[flag] !== undefined) input[param] = flags[flag];
+  for (const [flag, value] of Object.entries(flags)) {
+    const mapping = paramForFlag[flag];
+    if (!mapping) continue; // a global CLI flag, not a tool param
+    input[mapping.param] = mapping.invert ? !value : value;
   }
-  const refs = flags["ref"] as string[] | undefined;
-  if (refs?.length) input.reference_images = refs;
-  if (flags["owns-references"]) input.owns_references = true;
-  if (flags["no-audio"]) input.audio = false;
-  if (flags["captions"]) input.captions = true;
-  if (flags["enhance-prompt"]) input.enhance_prompt = true;
   return input;
 }
 
-const flag = (param: string) => FLAG_FOR[param] ?? param;
-
-/** Returns human-readable problems (empty array = locally valid). */
+/** Returns human-readable problems (empty array = locally valid). `flagFor`
+ * (derived from the schema) supplies the CLI flag spelling for messages. */
 export function preValidate(
   tool: string,
   input: Record<string, unknown>,
   schemas: ToolSchema[],
+  flagFor: Record<string, string>,
 ): string[] {
+  const flag = (param: string) => flagFor[param] ?? "--" + param.replace(/_/g, "-");
   const schema = schemas.find((s) => s.name === tool);
   if (!schema) {
     return [`Unknown tool "${tool}". Available tools: ${schemas.map((s) => s.name).join(", ")}`];
