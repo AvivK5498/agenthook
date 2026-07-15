@@ -1,0 +1,44 @@
+{
+  "name": "@getagenthook/mcp",
+  "version": "1.0.1",
+  "description": "Local stdio MCP server for the AgentHook hosted media-generation API — make character-consistent UGC video, images, and captions from any MCP client.",
+  "license": "Apache-2.0",
+  "homepage": "https://getagenthook.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AvivK5498/agenthook.git"
+  },
+  "mcpName": "io.github.AvivK5498/agenthook",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "ai",
+    "video-generation",
+    "image-generation",
+    "agents"
+  ],
+  "type": "module",
+  "bin": {
+    "agenthook-mcp": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

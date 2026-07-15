@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.AvivK5498/agenthook",
+  "description": "Character-consistent UGC video, images, and captions from any MCP client, via the AgentHook API.",
+  "repository": {
+    "url": "https://github.com/AvivK5498/agenthook",
+    "source": "github"
+  },
+  "version": "1.0.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@getagenthook/mcp",
+      "version": "1.0.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AGENTHOOK_API_KEY",
+          "isSecret": true,
+          "isRequired": true,
+          "description": "Your AgentHook API key (ah_...)"
+        },
+        {
+          "name": "AGENTHOOK_API_URL",
+          "isRequired": false,
+          "description": "Override the API base (defaults to https://getagenthook.com)"
+        }
+      ]
+    }
+  ]
+}
