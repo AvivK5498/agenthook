@@ -2,21 +2,28 @@
 // TOOLS_JSON_SCHEMA (what GET /v1/tools serves).
 import { describe, expect, test } from "vitest";
 import { TOOLS_JSON_SCHEMA } from "../../core/contract";
+import { deriveRunFlags } from "../src/flags";
 import { buildToolInput, OWNS_REFERENCES_CONSENT, preValidate, PROMPT_CAPS } from "../src/validate";
 
 const schemas = TOOLS_JSON_SCHEMA;
-const ok = (tool: string, input: Record<string, unknown>) => preValidate(tool, input, schemas);
+// The flag⇄param maps `buildToolInput`/`preValidate` now take are derived from
+// the very schema the server serves — same derivation `run` uses.
+const { paramForFlag, flagFor } = deriveRunFlags(schemas);
+const ok = (tool: string, input: Record<string, unknown>) => preValidate(tool, input, schemas, flagFor);
+const build = (flags: Parameters<typeof buildToolInput>[0]) => buildToolInput(flags, paramForFlag);
 
 describe("buildToolInput", () => {
   test("maps flags to API params, omitting what was not passed", () => {
-    const input = buildToolInput({
+    const input = build({
       prompt: "hi",
       ref: ["https://a/1.jpg"],
       "owns-references": true,
       "aspect-ratio": "9:16",
       "no-audio": true,
       captions: true,
-      "caption-style": "tiktok",
+      "caption-style": "chunk",
+      "caption-size": "large",
+      "caption-placement": "top",
       "enhance-prompt": true,
       duration: 8,
     });
@@ -27,14 +34,37 @@ describe("buildToolInput", () => {
       aspect_ratio: "9:16",
       audio: false,
       captions: true,
-      caption_style: "tiktok",
+      caption_style: "chunk",
+      caption_size: "large",
+      caption_placement: "top",
       enhance_prompt: true,
       duration: 8,
     });
   });
 
+  test("maps caption_video refinements (--size / --placement)", () => {
+    const input = build({
+      "video-url": "https://a/v.mp4",
+      style: "highlight",
+      size: "small",
+      placement: "bottom",
+    });
+    expect(input).toEqual({
+      video_url: "https://a/v.mp4",
+      style: "highlight",
+      size: "small",
+      placement: "bottom",
+    });
+  });
+
   test("no flags → empty input (server defaults rule)", () => {
-    expect(buildToolInput({})).toEqual({});
+    expect(build({})).toEqual({});
+  });
+
+  test("global CLI flags (api-url/key/json/dry-run) are not tool params", () => {
+    expect(build({ "api-url": "https://x", key: "k", json: true, "dry-run": true, prompt: "hi" })).toEqual({
+      prompt: "hi",
+    });
   });
 });
 
@@ -84,7 +114,7 @@ describe("preValidate", () => {
 
   test("invalid caption style rejected", () => {
     const errs = ok("caption_video", { video_url: "https://a/v.mp4", style: "karaoke" });
-    expect(errs.join("\n")).toContain("movie, tiktok");
+    expect(errs.join("\n")).toContain("chunk, highlight, subtitle");
   });
 
   test("nano-banana-2 forced without refs is rejected with the fix", () => {

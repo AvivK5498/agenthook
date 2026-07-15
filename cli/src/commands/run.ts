@@ -1,39 +1,14 @@
 import * as crypto from "node:crypto";
-import { parseArgs, type FlagSpec } from "../args";
+import { parseArgs } from "../args";
 import { resolveApiKey, resolveApiUrl } from "../config";
 import { EXIT, exitCodeForApiError, type ExitCode } from "../exit";
+import { deriveRunFlags } from "../flags";
 import { api, ApiError, describeApiError } from "../http";
 import { appendJob } from "../jobs";
-import { getLocalToolSchemas } from "../schemas";
+import { resolveRunSchemas } from "../schemas";
 import { IDEMPOTENCY_KEY_HEADER } from "../types";
 import { buildToolInput, preValidate } from "../validate";
 import type { DryRunResponse, RunCreatedResponse, RunResponse } from "../types";
-
-const RUN_FLAGS: FlagSpec = {
-  "api-url": "string",
-  key: "string",
-  json: "boolean",
-  "dry-run": "boolean",
-  prompt: "string",
-  ref: "array",
-  "owns-references": "boolean",
-  model: "string",
-  quality: "string",
-  duration: "number",
-  "aspect-ratio": "string",
-  "no-audio": "boolean",
-  captions: "boolean",
-  "caption-style": "string",
-  "enhance-prompt": "boolean",
-  "video-url": "string",
-  style: "string",
-  count: "number",
-  resolution: "string",
-  language: "string",
-  name: "string",
-  slug: "string",
-  influencer: "string",
-};
 
 // Poll cadence: 5s (spec); overridable for tests. Every watcher gets a
 // give-up (donor rule): a wall-clock deadline + bounded consecutive misses.
@@ -45,7 +20,15 @@ const MAX_POLL_MISSES = 5;
 const SUBMIT_RETRIES = 1;
 
 export async function run(argv: string[]): Promise<number> {
-  const { positionals, flags, errors } = parseArgs(argv, RUN_FLAGS);
+  // Flags are DERIVED from the live tool schema (so a new API param is a usable
+  // flag without a CLI upgrade), and the schema source is per-api-url — so the
+  // api-url is pulled from argv BEFORE the full parse, the schema is resolved,
+  // then the flag spec is built to parse against.
+  const apiUrl = resolveApiUrl(preScanApiUrl(argv));
+  const schemas = await resolveRunSchemas(apiUrl);
+  const { spec, paramForFlag, flagFor } = deriveRunFlags(schemas);
+
+  const { positionals, flags, errors } = parseArgs(argv, spec);
   if (errors.length) {
     errors.forEach((e) => console.error(e));
     return EXIT.GENERIC;
@@ -56,20 +39,17 @@ export async function run(argv: string[]): Promise<number> {
     console.error("Usage: agenthook run <tool> [flags] — see `agenthook tools`");
     return EXIT.GENERIC;
   }
-  const apiUrl = resolveApiUrl(flags["api-url"] as string | undefined);
   const key = resolveApiKey(flags["key"] as string | undefined);
   if (!key) {
     emitError(asJson, "Not logged in — run `agenthook auth:login` first.", EXIT.AUTH);
     return EXIT.AUTH;
   }
 
-  // Deterministic pre-validation BEFORE any network call (spec §3) — schemas
-  // resolve locally in every case: cached /v1/tools fetch if one exists,
-  // otherwise the bundled snapshot (fresh install, offline). The server
-  // re-validates authoritatively on submit.
-  const schemas = getLocalToolSchemas(apiUrl);
-  const input = buildToolInput(flags);
-  const problems = preValidate(tool, input, schemas);
+  // Deterministic pre-validation BEFORE the run is submitted (spec §3): every
+  // locally-checkable rule the server would 400 on. The server re-validates
+  // authoritatively on submit.
+  const input = buildToolInput(flags, paramForFlag);
+  const problems = preValidate(tool, input, schemas, flagFor);
   if (problems.length) {
     if (asJson) emitError(true, problems.join("; "), EXIT.VALIDATION);
     else problems.forEach((p) => console.error(p));
@@ -200,6 +180,18 @@ async function submitWithRetry(
       throw e;
     }
   }
+}
+
+/** Pull --api-url out of raw argv before the flag spec exists (spec derivation
+ * needs the schema, fetched per api-url). Mirrors parseArgs' two forms; full
+ * precedence (flag > env > file > default) is applied by resolveApiUrl. */
+function preScanApiUrl(argv: string[]): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a === "--api-url") return argv[i + 1];
+    if (a.startsWith("--api-url=")) return a.slice("--api-url=".length);
+  }
+  return undefined;
 }
 
 const topUpUrl = (apiUrl: string) => `${apiUrl}/credits`;

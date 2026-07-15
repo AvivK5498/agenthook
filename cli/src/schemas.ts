@@ -1,8 +1,10 @@
-// Tool-schema source for deterministic pre-validation: GET /v1/tools is the
-// single live schema source (the `tools` command fetches + caches it), and
-// `run` validates against a purely LOCAL resolution — fetched cache if
-// present, else the bundled snapshot — so pre-validation never makes a
-// network call, including on a fresh install (spec §3).
+// Tool-schema source. GET /v1/tools is the single live schema source, and
+// `run` DERIVES its flags from it (a new API param is a usable flag with no CLI
+// upgrade) via resolveRunSchemas: the cached fetch when fresh, a live keyless
+// fetch on miss (public endpoint), and the bundled snapshot as the offline
+// fallback — so it stays current online and still works offline. (This relaxes
+// the original spec §3 "no network before submit" guarantee to a cached,
+// at-most-hourly, keyless fetch — the cost of never-stale flags.)
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { configDir } from "./config";
@@ -41,6 +43,19 @@ function writeCache(cache: ToolsCache): void {
  * request is rejected, never whether. */
 export function getLocalToolSchemas(apiUrl: string): ToolSchema[] {
   return readCache()[apiUrl]?.tools ?? TOOLS_SNAPSHOT;
+}
+
+/** Schema source for `run`'s flag derivation + pre-validation. Live-and-cached
+ * (GET /v1/tools is PUBLIC — no key) so a new tool param becomes a usable flag
+ * without a CLI upgrade; falls back to the last cache, then the bundled
+ * snapshot, so it never throws (offline / fresh install still work). The server
+ * re-validates authoritatively on submit. */
+export async function resolveRunSchemas(apiUrl: string): Promise<ToolSchema[]> {
+  try {
+    return await getToolSchemas(apiUrl);
+  } catch {
+    return getLocalToolSchemas(apiUrl);
+  }
 }
 
 /** Cached-first schema load. `fresh: true` (the `tools` command) always

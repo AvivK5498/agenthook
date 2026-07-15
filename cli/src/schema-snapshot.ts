@@ -36,8 +36,25 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
         default: "9:16",
       },
       audio: { type: "boolean", default: true },
-      captions: { type: "boolean", default: false },
-      caption_style: { type: "string", enum: ["movie", "tiktok"], default: "tiktok" },
+      captions: {
+        type: "boolean",
+        default: false,
+        description:
+          "Burn spoken-word captions into the video. When true the run returns two files: output[0] is captioned, output[1] is the original uncaptioned video.",
+      },
+      caption_style: {
+        type: "string",
+        enum: ["chunk", "highlight", "subtitle"],
+        default: "chunk",
+        description:
+          "Caption look. chunk = 2–4 words per line, centered, bold with a heavy outline (the standard TikTok/Reels style). highlight = the same block with the active word lit in colour (the Hormozi/retention style). subtitle = one clean line at the bottom (cinematic / YouTube).",
+      },
+      caption_size: { type: "string", enum: ["small", "medium", "large"], default: "medium", description: "Caption text size." },
+      caption_placement: {
+        type: "string",
+        enum: ["top", "center", "bottom"],
+        description: "Where captions sit. Defaults per style: chunk/highlight → center, subtitle → bottom.",
+      },
       enhance_prompt: { type: "boolean", default: false },
       influencer: {
         type: "string",
@@ -75,10 +92,23 @@ export const TOOLS_SNAPSHOT: ToolSchema[] = [
   },
   {
     name: "caption_video",
-    description: "Burn styled subtitles into an existing video.",
+    description:
+      "Burn styled captions into an existing video. Returns two files: output[0] is the captioned video, output[1] is the original uncaptioned video — so you can re-caption with a different style without regenerating. (A speechless video returns just the original.)",
     params: {
       video_url: { type: "string", required: true },
-      style: { type: "string", enum: ["movie", "tiktok"], default: "movie" },
+      style: {
+        type: "string",
+        enum: ["chunk", "highlight", "subtitle"],
+        default: "chunk",
+        description:
+          "Caption look. chunk = bold centered word blocks (standard TikTok/Reels). highlight = active word lit in colour (Hormozi/retention). subtitle = clean bottom line (cinematic / YouTube).",
+      },
+      size: { type: "string", enum: ["small", "medium", "large"], default: "medium", description: "Caption text size." },
+      placement: {
+        type: "string",
+        enum: ["top", "center", "bottom"],
+        description: "Where captions sit. Defaults per style: chunk/highlight → center, subtitle → bottom.",
+      },
       language: { type: "string", default: "auto" },
     },
   },

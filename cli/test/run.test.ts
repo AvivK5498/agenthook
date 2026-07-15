@@ -1,5 +1,18 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { runCli } from "../src/cli";
+
+// `run` resolves its schemas via resolveRunSchemas (live GET /v1/tools, cached,
+// snapshot fallback). These tests exercise run's OWN logic — flag derivation,
+// pre-validation, submit, poll — with the schema INJECTED as the real
+// TOOLS_JSON_SCHEMA, so every "zero network before submit" assertion below is
+// deterministic. (resolveRunSchemas' own fetch/cache/snapshot-fallback path is
+// covered by the schemas + parity tests, not here.)
+vi.mock("../src/schemas", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/schemas")>();
+  const { TOOLS_JSON_SCHEMA } = await import("../../core/contract");
+  return { ...actual, resolveRunSchemas: async () => TOOLS_JSON_SCHEMA };
+});
+
 import {
   API,
   V1,
@@ -209,7 +222,7 @@ describe("run — submit + poll", () => {
       "--quality", "pro",
       "--aspect-ratio", "9:16",
       "--captions",
-      "--caption-style", "tiktok",
+      "--caption-style", "chunk",
     ]);
     expect(code).toBe(0);
     expect(polls).toBe(3);
@@ -224,7 +237,7 @@ describe("run — submit + poll", () => {
       quality: "pro",
       aspect_ratio: "9:16",
       captions: true,
-      caption_style: "tiktok",
+      caption_style: "chunk",
     });
     // bearer auth on every call
     const headers = (post[1] as RequestInit).headers as Record<string, string>;

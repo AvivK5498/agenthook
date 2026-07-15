@@ -1,9 +1,9 @@
 import { parseArgs } from "../args";
 import { resolveApiKey, resolveApiUrl } from "../config";
 import { EXIT } from "../exit";
+import { deriveRunFlags } from "../flags";
 import { guardJson } from "../json-error";
 import { getToolSchemas } from "../schemas";
-import { FLAG_FOR } from "../validate";
 import type { ToolParamSpec } from "../types";
 
 export async function tools(argv: string[]): Promise<number> {
@@ -21,10 +21,13 @@ export async function tools(argv: string[]): Promise<number> {
       console.log(JSON.stringify({ tools: schemas }));
       return EXIT.OK;
     }
+    // Same derivation `run` parses against — the flag spelling shown here is
+    // exactly the one that will work.
+    const { flagFor } = deriveRunFlags(schemas);
     for (const tool of schemas) {
       console.log(`${tool.name} — ${tool.description}`);
       for (const [name, spec] of Object.entries(tool.params)) {
-        console.log(`  ${renderParam(name, spec)}`);
+        console.log(`  ${renderParam(name, spec, flagFor)}`);
       }
       console.log("");
     }
@@ -33,8 +36,8 @@ export async function tools(argv: string[]): Promise<number> {
   });
 }
 
-function renderParam(name: string, spec: ToolParamSpec): string {
-  const flagName = FLAG_FOR[name] ?? `--${name.replace(/_/g, "-")}`;
+function renderParam(name: string, spec: ToolParamSpec, flagFor: Record<string, string>): string {
+  const flagName = flagFor[name] ?? `--${name.replace(/_/g, "-")}`;
   const hint =
     spec.type === "boolean"
       ? ""
